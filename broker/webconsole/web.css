@@ -1,0 +1,126 @@
+/* Copyright © 2026 SurgeXi Business Intelligence, a Teamsmith Enterprises LLC company. Licensed under the Business Source License 1.1 — see LICENSE. */
+/* Vertirite web console — browser-only styling.
+ * Layered on top of styles.css (the shared renderer stylesheet). Covers three
+ * things the desktop app doesn't need: the token login overlay, hiding
+ * Electron-only nav, and tablet/touch responsiveness for on-LAN devices. */
+
+/* ── hide desktop-only surfaces in the browser ──────────────────────────── */
+/* Theatre + any desktop-feature nav item: the IPC bridge can't drive these in
+ * a browser, so don't offer them. */
+.vr-nav-feature { display: none !important; }
+/* Theatre CTAs (home, plus the approvals empty/error states) point to
+ * theatre.html, which the broker does NOT serve in web mode — a dead
+ * internal-demo link. Hide every one so a customer never sees it. */
+a[href="./theatre.html"] { display: none !important; }
+
+/* ── login overlay ──────────────────────────────────────────────────────── */
+#vrt-login {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(120% 120% at 50% 0%, #0d1424 0%, #070b14 60%, #04060c 100%);
+  padding: 24px;
+}
+.vrt-login-card {
+  width: 100%;
+  max-width: 380px;
+  background: rgba(18, 24, 40, 0.92);
+  border: 1px solid rgba(120, 140, 190, 0.18);
+  border-radius: 16px;
+  padding: 32px 28px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+.vrt-login-mark {
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  font-size: 22px;
+  color: #eaf0ff;
+}
+.vrt-login-mark span { color: #5b8cff; }
+.vrt-login-tag {
+  margin: 8px 0 24px;
+  color: #9fb0d0;
+  font-size: 13px;
+}
+.vrt-login-label {
+  display: block;
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8092b4;
+  margin-bottom: 6px;
+}
+#vrt-login-token {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(120, 140, 190, 0.25);
+  background: #0b1120;
+  color: #eaf0ff;
+  font-size: 15px;
+  outline: none;
+}
+#vrt-login-token:focus { border-color: #5b8cff; }
+.vrt-login-err {
+  text-align: left;
+  color: #ff8a8a;
+  font-size: 12.5px;
+  margin: 10px 0 0;
+}
+.vrt-login-btn {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #5b8cff, #3f6fe0);
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+}
+.vrt-login-btn:disabled { opacity: 0.6; cursor: default; }
+.vrt-login-hint {
+  margin: 16px 0 0;
+  color: #6f80a2;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+/* ── tablet / touch responsiveness (iPad, Galaxy Tab on the same LAN) ───── */
+@media (max-width: 900px) {
+  /* Collapse the fixed sidebar into a top strip so the console is usable on a
+   * tablet in portrait without a desktop-width layout. */
+  .vr-app { flex-direction: column; }
+  .vr-sidebar {
+    width: 100% !important;
+    height: auto !important;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    overflow-x: auto;
+  }
+  .vr-sidebar-brand { padding: 12px 16px; }
+  .vr-sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 0 8px 8px;
+  }
+  .vr-nav-section { display: none; }
+  .vr-sidebar-footer { display: none; }
+  .vr-main { padding: 16px !important; }
+  .vr-home-grid { grid-template-columns: 1fr !important; }
+  .vr-mode-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Larger touch targets on coarse pointers. */
+@media (pointer: coarse) {
+  .vr-nav-item, .vr-btn { min-height: 44px; }
+}

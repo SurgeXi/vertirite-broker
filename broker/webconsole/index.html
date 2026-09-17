@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<!-- Copyright © 2026 SurgeXi Business Intelligence, a Teamsmith Enterprises LLC company. Licensed under the Business Source License 1.1 — see LICENSE. -->
+<!--
+  Vertirite web console — served by the broker at /console.
+
+  This is the BROWSER entry point. It is the desktop renderer (styles.css +
+  app.js, copied verbatim from apps/desktop/renderer via scripts/sync-webconsole.sh)
+  wrapped with:
+    - web.css         (login overlay, tablet responsiveness, hide desktop-only nav)
+    - web-bridge.js   (defines window.surgeDesktop over same-origin fetch — loaded
+                       BEFORE app.js so the bridge exists when app.js boots)
+    - PWA manifest    (so iPad / Galaxy tablets on the LAN can "Add to Home Screen")
+
+  Keep the <body> markup in sync with apps/desktop/renderer/index.html. The shared
+  assets (app.js, styles.css) are synced by the script; this shell is web-specific.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Vertirite</title>
+  <meta name="theme-color" content="#070b14" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Vertirite" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <link rel="icon" href="./icon-192.png" />
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./web.css" />
+</head>
+<body>
+  <div class="vr-app">
+
+    <!-- ─── Sidebar ───────────────────────────────────────── -->
+    <aside class="vr-sidebar" id="vr-sidebar">
+      <header class="vr-sidebar-brand">
+        <span class="vr-mark">VERTI<span class="vr-mark-rite">RITE</span></span>
+        <span class="vr-mark-sub">by SurgeXi</span>
+      </header>
+
+      <nav class="vr-sidebar-nav" id="vr-nav">
+        <a class="vr-nav-item vr-nav-active" data-view="home" href="#home">
+          <span class="vr-nav-icon">⌂</span>
+          <span class="vr-nav-label">Home</span>
+        </a>
+
+        <div class="vr-nav-section">
+          <span class="vr-nav-section-label">Control plane</span>
+        </div>
+        <a class="vr-nav-item" data-view="approvals" href="#approvals">
+          <span class="vr-nav-icon">⏳</span>
+          <span class="vr-nav-label">Approvals queue</span>
+          <span class="vr-nav-counter" id="vr-counter-approvals">0</span>
+        </a>
+        <a class="vr-nav-item" data-view="audit" href="#audit">
+          <span class="vr-nav-icon">▤</span>
+          <span class="vr-nav-label">Audit log</span>
+        </a>
+        <a class="vr-nav-item" data-view="mode" href="#mode">
+          <span class="vr-nav-icon">◎</span>
+          <span class="vr-nav-label">Mode authority</span>
+          <span class="vr-nav-badge vr-nav-badge-mode" id="vr-mode-badge">controlled</span>
+        </a>
+        <a class="vr-nav-item" data-view="capabilities" href="#capabilities">
+          <span class="vr-nav-icon">⚙</span>
+          <span class="vr-nav-label">Capability registry</span>
+        </a>
+        <a class="vr-nav-item" data-view="tenants" href="#tenants">
+          <span class="vr-nav-icon">⌘</span>
+          <span class="vr-nav-label">Tenants</span>
+        </a>
+
+        <div class="vr-nav-section">
+          <span class="vr-nav-section-label">Discovery</span>
+        </div>
+        <a class="vr-nav-item" data-view="discovery" href="#discovery">
+          <span class="vr-nav-icon">◉</span>
+          <span class="vr-nav-label">Coverage map</span>
+        </a>
+        <a class="vr-nav-item" data-view="exposure" href="#exposure">
+          <span class="vr-nav-icon">&#128196;</span>
+          <span class="vr-nav-label">Exposure report</span>
+        </a>
+        <a class="vr-nav-item" data-view="governed" href="#governed">
+          <span class="vr-nav-icon">&#9919;</span>
+          <span class="vr-nav-label">Under governance</span>
+        </a>
+        <a class="vr-nav-item" data-view="protection" href="#protection">
+          <span class="vr-nav-icon">&#128737;</span>
+          <span class="vr-nav-label">Protection</span>
+        </a>
+
+        <div class="vr-nav-section">
+          <span class="vr-nav-section-label">Reference</span>
+        </div>
+        <a class="vr-nav-item vr-nav-external" href="https://vertirite.com" target="_blank" rel="noopener">
+          <span class="vr-nav-icon">↗</span>
+          <span class="vr-nav-label">vertirite.com</span>
+        </a>
+        <a class="vr-nav-item vr-nav-external" href="/docs" target="_blank" rel="noopener">
+          <span class="vr-nav-icon">↗</span>
+          <span class="vr-nav-label">Broker API docs</span>
+        </a>
+      </nav>
+
+      <footer class="vr-sidebar-footer">
+        <button class="vr-user" id="vr-user-btn">
+          <span class="vr-user-avatar">VR</span>
+          <span class="vr-user-meta">
+            <span class="vr-user-name">Operator</span>
+            <span class="vr-user-tier">Sign out</span>
+          </span>
+        </button>
+        <div class="vr-version">Vertirite v0.2.0 · <span id="vr-version-mode">CONTROLLED</span></div>
+        <div class="vr-copyright" style="font-size:0.66rem;color:#8C6F2A;letter-spacing:0.02em;margin-top:5px;">&copy; 2026 SurgeXi Business Intelligence, A Teamsmith Enterprises LLC AL company &middot; all rights reserved</div>
+      </footer>
+    </aside>
+
+    <!-- ─── Main pane (view router) ───────────────────────── -->
+    <main class="vr-main" id="vr-main">
+
+      <!-- HOME VIEW ────────────────────────────────────── -->
+      <section class="vr-view vr-view-active" id="vr-view-home">
+        <header class="vr-topbar">
+          <div>
+            <div class="vr-breadcrumb">Home</div>
+            <h1 class="vr-page-title">Every automated action, a rite.</h1>
+          </div>
+          <div class="vr-topbar-status" id="vr-broker-status">
+            <span class="vr-status-dot vr-status-dot-pending"></span>
+            <span class="vr-status-text">Connecting to broker…</span>
+          </div>
+        </header>
+
+        <div class="vr-home-cta">
+          <a class="vr-btn vr-btn-primary vr-btn-lg" href="#approvals" data-view="approvals">
+            Open approvals queue
+          </a>
+          <a class="vr-btn vr-btn-secondary vr-btn-lg" href="#discovery" data-view="discovery">
+            View coverage map
+          </a>
+        </div>
+
+        <div class="vr-home-grid">
+          <div class="vr-card vr-card-status">
+            <span class="vr-card-eyebrow">Mode authority</span>
+            <div class="vr-card-value" id="vr-home-mode">CONTROLLED</div>
+            <p class="vr-card-body">Out-of-band; the AI cannot override. Click to view the mode-history log.</p>
+            <a class="vr-card-link" href="#mode" data-view="mode">View mode history →</a>
+          </div>
+
+          <div class="vr-card vr-card-status">
+            <span class="vr-card-eyebrow">Pending approvals</span>
+            <div class="vr-card-value" id="vr-home-pending">—</div>
+            <p class="vr-card-body">Actions held by the policy gate, awaiting human sign-off.</p>
+            <a class="vr-card-link" href="#approvals" data-view="approvals">Review queue →</a>
+          </div>
+
+          <div class="vr-card vr-card-status">
+            <span class="vr-card-eyebrow">Audit log</span>
+            <div class="vr-card-value vr-card-value-mono" id="vr-home-audit-last">No events yet</div>
+            <p class="vr-card-body">Append-only, cryptographically attributed. Tenant-scoped read.</p>
+            <a class="vr-card-link" href="#audit" data-view="audit">Open audit log →</a>
+          </div>
+
+          <div class="vr-card vr-card-status">
+            <span class="vr-card-eyebrow">Capability registry</span>
+            <div class="vr-card-value" id="vr-home-cap-count">—</div>
+            <p class="vr-card-body">Per-system YAML. Adding a capability is a code-reviewed change.</p>
+            <a class="vr-card-link" href="#capabilities" data-view="capabilities">Browse capabilities →</a>
+          </div>
+        </div>
+
+        <div class="vr-home-recent">
+          <h2 class="vr-section-title">Recent activity</h2>
+          <div class="vr-empty" id="vr-home-recent-list">
+            <p>No activity yet. Activity appears here as Vertirite observes and governs automated actions on your network.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- APPROVALS VIEW ───────────────────────────────── -->
+      <section class="vr-view" id="vr-view-approvals">
+        <header class="vr-topbar">
+          <div>
+            <div class="vr-breadcrumb">Control plane · Approvals queue</div>
+            <h1 class="vr-page-title">Pending approvals</h1>
+          </div>
+          <button class="vr-btn vr-btn-secondary" id="vr-approvals-refresh">Refresh</button>
+        </header>
+        <p class="vr-view-lead">
+          Every action the policy gate flagged for human review. Decision is signed back to the broker; the audit row records who approved, when, and why.
+        </p>
+        <div class="vr-empty" id="vr-approvals-list">
+          <p>No actions are waiting for approval right now.</p>
+        </div>
+      </section>
+
+      <!-- AUDIT VIEW ───────────────────────────────────── -->
+      <section class="vr-view" id="vr-view-audit">
+        <header class="vr-topbar">
+          <div>
+            <div class="vr-breadcrumb">Control plane · Audit log</div>
+            <h1 class="vr-page-title">Append-only audit log</h1>
+          </div>
+          <div class="vr-filter-bar">
+            <input class="vr-input" id="vr-audit-filter" type="text" placeholder="Filter by tenant, actor, action…" />
+            <button class="vr-btn vr-btn-secondary">Export</button>
+          </div>
+        </header>
+        <p class="vr-view-lead">
+          Cryptographically attributed. Append-only. Tenant-scoped read. The artifact your auditors sign.
+        </p>
+        <div class="vr-empty" id="vr-audit-list">
+          <p>No audit rows yet.</p>
+        </div>
+      </section>
+
+      <!-- MODE AUTHORITY VIEW ──────────────────────────── -->
+      <section class="vr-view" id="vr-view-mode">
+        <header class="vr-topbar">
+          <div>
+            <div class="vr-breadcrumb">Control plane · Mode authority</div>
+            <h1 class="vr-page-title">Mode authority</h1>
+          </div>
+        </header>
+        <p class="vr-view-lead">
+          The mode that decides whether an automated action runs. Out-of-band from the AI — the AI cannot promote itself out of LOCKDOWN. Changes here propagate to every protected system inside ~5s.
+        </p>
+        <div class="vr-mode-grid">
+          <button class="vr-mode-card vr-mode-autonomous" data-mode="AUTONOMOUS">
+            <span class="vr-mode-card-key">A</span>
+            <h3>Autonomous</h3>
+            <p>The AI acts without per-action approval. Audit log still records every action. Use sparingly.</p>
+          </button>
+          <button class="vr-mode-card vr-mode-controlled vr-mode-active" data-mode="CONTROLLED">
+            <span class="vr-mode-card-key">C</span>
+            <h3>Controlled <span class="vr-mode-current">current</span></h3>
+            <p>Default operating posture. Read-only and SAFE actions auto-execute. Mutating / REMOTE / DESTRUCTIVE actions queue for approval.</p>
+          </button>
+          <button class="vr-mode-card vr-mode-escalation" data-mode="ESCALATION_REQUIRED">
+            <span class="vr-mode-card-key">E</span>
+            <h3>Escalation required</h3>
+            <p>Every action — even read-only — queues for approval. Use during pre-announced maintenance windows or post-incident soak periods.</p>
+          </button>
+          <button class="vr-mode-card vr-mode-lockdown" data-mode="LOCKDOWN">
+            <span class="vr-mode-card-key">L</span>
+            <h3>Lockdown</h3>
+            <p>Every action denied. The AI fails closed. Operators can still inspect; nothing executes. Click twice to engage.</p>
+          </button>
+        </div>
+        <div class="vr-mode-history">
+          <h2 class="vr-section-title">Mode history</h2>
+          <div class="vr-empty">
+            <p>No mode changes recorded yet.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPABILITY REGISTRY VIEW ─────────────────────── -->
+      <section class="vr-view" id="vr-view-capabilities">
+        <header class="vr-topbar">
+          <div>
+            <div class="vr-breadcrumb">Control plane · Capability registry</div>
+            <h1 class="vr-page-title">Capability registry</h1>
+          </div>
+          <a class="vr-btn vr-btn-secondary" href="https://github.com/SurgeXi/Vertirite/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noopener">Schema spec ↗</a>
+        </header>
+        <p class="vr-view-lead">
+          Per-system YAML defining exactly which roles can call which endpoints. Adding a capability is a code-reviewed change — never a runtime toggle. The audit row records the merge SHA next to every action that capability authorizes.
+        </p>
+        <div class="vr-empty" id="vr-capabilities-list">
+          <p>Loading the capability registry…</p>
+        </div>
+      </section>
+
+      <!-- DISCOVERY / COVERAGE MAP VIEW -->
+      <section class="vr-view" id="vr-view-discovery">
+        <header class="vr-topbar">
+          <div>
+            <div class="vr-breadcrumb">Discovery · Coverage map</div>
+            <h1 class="vr-page-title">What we see &minus; what we govern</h1>
+          </div>
+          <button class="vr-btn vr-btn-secondary" id="vr-coverage-refresh">Refresh</button>
+        </header>
+        <p class="vr-view-lead">
+          The AI and automation activity we observe on-prem, minus what already routes through governance. The gap is your ungoverned exposure &mdash; highest-signal first.
+        </p>
+        <div class="vr-empty" id="vr-coverage-body">
+          <p>Loading your coverage map…</p>
+        </div>
+      </section>
+
+      <!-- EXPOSURE REPORT VIEW -->
+      <section class="vr-view" id="vr-view-exposure">
+        <header class="vr-topbar">
+          <div>
+            <div class="vr-breadcrumb">Discovery · Exposure report</div>
+            <h1 class="vr-page-title">Your exposure report</h1>
+          </div>
+          <div class="vr-filter-bar">
+            <button class="vr-btn vr-btn-primary" id="vr-exposure-download">&#8681; Download PDF</button>
+            <button class="vr-btn vr-btn-secondary" id="vr-exposure-refresh">Refresh</button>
+          </div>
+        </header>
+        <p class="vr-view-lead">
+          Governed vs ungoverned coverage and your ranked ungoverned exposure &mdash; the free, forwardable summary a CISO, board, or auditor can read. Export it as a PDF anytime.
+        </p>
+        <div class="vr-empty" id="vr-exposure-body">
+          <p>Building your exposure report…</p>
+        </div>
+      </section>
+
+      <section class="vr-view" id="vr-view-protection">
+        <header class="vr-topbar">
+          <div>
+            <div class="vr-breadcrumb">Protection</div>
+            <h1 class="vr-page-title">License &amp; self-protection</h1>
+          </div>
+          <button class="vr-btn vr-btn-secondary" id="vr-protection-refresh">Refresh</button>
+        </header>
+        <p class="vr-view-lead">
+          Your entitlement and the health of Vertirite's own protections — license tier, intelligence freshness, and the self-watch that detects a blocked phone-home or a copied install.
+        </p>
+        <div class="vr-empty" id="vr-protection-body">
+          <p>Loading protection status…</p>
+        </div>
+      </section>
+
+      <!-- UNDER GOVERNANCE VIEW -->
+      <section class="vr-view" id="vr-view-governed">
+        <header class="vr-topbar">
+          <div>
+            <div class="vr-breadcrumb">Discovery · Under governance</div>
+            <h1 class="vr-page-title">Under Vertirite&rsquo;s watch</h1>
+          </div>
+          <button class="vr-btn vr-btn-secondary" id="vr-governed-refresh">Refresh</button>
+        </header>
+        <p class="vr-view-lead">
+          Artifacts you brought under governance from the Coverage map. These are tracked, audited, and policy-gated &mdash; no longer part of your ungoverned exposure.
+        </p>
+        <div class="vr-empty" id="vr-governed-body">
+          <p>Loading governed artifacts…</p>
+        </div>
+      </section>
+
+      <section class="vr-view" id="vr-view-tenants">
+        <header class="vr-topbar">
+          <div>
+            <div class="vr-breadcrumb">Control plane · Tenants</div>
+            <h1 class="vr-page-title">Tenants</h1>
+          </div>
+          <button class="vr-btn vr-btn-primary">+ New tenant</button>
+        </header>
+        <p class="vr-view-lead">
+          Each customer or business unit lives in its own tenant. Per-tenant isolation flows end-to-end: API keys, audit log, capability registry, mode authority — everything scoped.
+        </p>
+        <div class="vr-empty" id="vr-tenants-list">
+          <p>Loading tenants…</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- bridge first (defines window.surgeDesktop), then the shared renderer -->
+  <script src="./web-bridge.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

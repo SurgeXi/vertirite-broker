@@ -1,0 +1,31 @@
+<!-- Copyright © 2026 SurgeXi Business Intelligence, a Teamsmith Enterprises LLC company. -->
+<!-- Licensed under the Business Source License 1.1 — see ../LICENSE. -->
+<!-- SANITIZED FIXTURE — placeholder hostnames/IPs only, no real topology.
+     Copy to a host-local file and edit with your real inventory. -->
+# Infrastructure Knowledge
+
+## Nodes
+
+### node-01 (Primary)
+- Hostname: node-01
+- IP: 10.0.0.10
+- Role: Primary AI inference, control plane, vector DB
+- Services: local LLM runtime, control-plane, vector-db, llm-gateway, web-ui
+
+### node-02 (Secondary Inference)
+- IP: 10.0.0.20
+- Role: Secondary inference / GPU worker for small models
+
+### node-03 (Database)
+- IP: 10.0.0.30
+- Role: PostgreSQL, staging, batch processing
+
+## Network
+- All nodes on a private subnet (10.0.0.x range)
+- Local LLM inference reached via the configured backend URL
+
+## Key Services on node-01
+- control-plane: mode authority (AUTONOMOUS / CONTROLLED / ESCALATION_REQUIRED / LOCKDOWN)
+- vector-db: vector database for RAG and memory
+- llm-gateway: LLM routing layer
+- web-ui: chat / console interface

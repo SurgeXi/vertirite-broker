@@ -1,0 +1,42 @@
+{
+    "name": "docker-tools",
+    "version": "1.0.0",
+    "description": "Extended Docker management commands",
+    "author": "SurgeXi",
+    "commands": [
+        {
+            "name": "docker-logs",
+            "description": "View logs for a Docker container",
+            "pattern": "docker logs --tail 100 <container>",
+            "handler": "docker_logs",
+            "node": "node-01"
+        },
+        {
+            "name": "docker-restart",
+            "description": "Restart a Docker container",
+            "pattern": "docker restart <container>",
+            "handler": "docker_restart",
+            "node": "node-01"
+        },
+        {
+            "name": "docker-stats",
+            "description": "Show container resource usage",
+            "pattern": "docker stats --no-stream <container>",
+            "handler": "docker_stats",
+            "node": "node-01"
+        },
+        {
+            "name": "docker-inspect",
+            "description": "Inspect a Docker container",
+            "pattern": "docker inspect <container>",
+            "handler": "docker_inspect",
+            "node": "node-01"
+        }
+    ],
+    "quick_matches": [
+        [["docker logs"], "ssh node-01: docker logs --tail 100 {arg}"],
+        [["docker restart"], "ssh node-01: docker restart {arg}"],
+        [["docker stats"], "ssh node-01: docker stats --no-stream {arg}"],
+        [["docker inspect"], "ssh node-01: docker inspect {arg}"]
+    ]
+}

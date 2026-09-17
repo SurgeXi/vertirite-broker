@@ -1,0 +1,19 @@
+# Copyright © 2026 SurgeXi Business Intelligence, a Teamsmith Enterprises LLC company. Licensed under the Business Source License 1.1 — see LICENSE.
+# Ruff config for Vertirite broker.
+#
+# Conservative ruleset to start: pyflakes (F) + a small subset of
+# pycodestyle (E). Other rule packs disabled — we want ruff catching
+# real bugs (unused imports, undefined names) rather than arguing with
+# existing style. Tighten over time.
+
+target-version = "py312"
+line-length = 110
+
+[lint]
+select = ["E", "F"]
+ignore = [
+    "E501",  # line length (long strings are fine; line-length above caps)
+    "E701",  # multiple statements on one line — pre-existing pattern
+    "E702",  # multiple statements via semicolon — pre-existing pattern
+    "E741",  # ambiguous variable name — pre-existing in scheduler
+]

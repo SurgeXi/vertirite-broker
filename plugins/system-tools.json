@@ -1,0 +1,42 @@
+{
+    "name": "system-tools",
+    "version": "1.0.0",
+    "description": "System administration and monitoring commands",
+    "author": "SurgeXi",
+    "commands": [
+        {
+            "name": "service-status",
+            "description": "Check the status of a systemd service",
+            "pattern": "systemctl status <service>",
+            "handler": "service_status",
+            "node": "node-01"
+        },
+        {
+            "name": "service-restart",
+            "description": "Restart a systemd service",
+            "pattern": "systemctl restart <service>",
+            "handler": "service_restart",
+            "node": "node-01"
+        },
+        {
+            "name": "process-list",
+            "description": "List running processes with resource usage",
+            "pattern": "ps aux --sort=-%mem",
+            "handler": "process_list",
+            "node": "node-01"
+        },
+        {
+            "name": "network-check",
+            "description": "Check network connectivity and open ports",
+            "pattern": "ss -tlnp",
+            "handler": "network_check",
+            "node": "node-01"
+        }
+    ],
+    "quick_matches": [
+        [["service status"], "ssh node-01: systemctl status {arg}"],
+        [["service restart"], "ssh node-01: systemctl restart {arg}"],
+        [["process list", "list processes"], "ssh node-01: ps aux --sort=-%mem | head -20"],
+        [["network check", "check network"], "ssh node-01: ss -tlnp"]
+    ]
+}

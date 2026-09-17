@@ -1,0 +1,42 @@
+{
+    "name": "git-tools",
+    "version": "1.0.0",
+    "description": "Git repository management commands",
+    "author": "SurgeXi",
+    "commands": [
+        {
+            "name": "git-clone",
+            "description": "Clone a Git repository",
+            "pattern": "git clone <repo>",
+            "handler": "git_clone",
+            "node": null
+        },
+        {
+            "name": "git-pull",
+            "description": "Pull latest changes from remote",
+            "pattern": "git pull",
+            "handler": "git_pull",
+            "node": null
+        },
+        {
+            "name": "git-push",
+            "description": "Push committed changes to remote",
+            "pattern": "git push",
+            "handler": "git_push",
+            "node": null
+        },
+        {
+            "name": "git-commit",
+            "description": "Commit staged changes with a message",
+            "pattern": "git commit -m <message>",
+            "handler": "git_commit",
+            "node": null
+        }
+    ],
+    "quick_matches": [
+        [["git clone"], "exec: git clone {arg}"],
+        [["git pull"], "exec: git pull"],
+        [["git push"], "exec: git push"],
+        [["git commit"], "exec: git commit -m {arg}"]
+    ]
+}

@@ -1,0 +1,37 @@
+# Copyright © 2026 SurgeXi Business Intelligence, a Teamsmith Enterprises LLC company. Licensed under the Business Source License 1.1 — see LICENSE.
+[build-system]
+requires = ["hatchling>=1.21.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["broker"]
+
+[project]
+name = "surge-cmd-xi-broker"
+version = "0.1.0"
+requires-python = ">=3.9"
+# Dependencies are PINNED with a lower floor and an upper cap. An unpinned
+# runtime dependency in a security product is a supply-chain surface: an
+# unbounded range can silently pull a breaking or compromised new release at
+# build time. Floors are the project's tested baseline; caps stop the next
+# major (or, for 0.x projects, the next minor) from entering unreviewed.
+# python-multipart is required by FastAPI for the multipart/form-data upload
+# endpoints and was previously an undeclared (implicit) dependency.
+dependencies = [
+  "alembic>=1.14.0,<2.0",
+  "fastapi>=0.115.0,<0.140",
+  "uvicorn[standard]>=0.30.0,<0.47",
+  "httpx>=0.27.0,<0.29",
+  "pydantic>=2.8.0,<3.0",
+  "pydantic-settings>=2.4.0,<3.0",
+  "sqlalchemy>=2.0.0,<2.1",
+  "psycopg[binary]>=3.2.0,<3.4",
+  "cryptography>=42.0.0,<49.0",
+  "reportlab>=4.2.0,<5.1",
+  "python-multipart>=0.0.9,<0.0.28"
+]
+
+[project.scripts]
+surge-cmd-xi-broker = "broker.main:run"
+vertirite-intel = "broker.intelligence.cli:main"
+vertirite-license = "broker.licensing.cli:main"

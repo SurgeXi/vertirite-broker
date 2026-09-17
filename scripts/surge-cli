@@ -1,0 +1,178 @@
+#!/usr/bin/env python3
+"""surge-cli — talk to Surge from the terminal.
+
+Subcommands:
+
+  surge-cli invoke "<intent>"          natural-language ask
+  surge-cli dispatch <cap> [k=v ...]   call a capability directly
+  surge-cli capabilities               list what surge can do
+  surge-cli playbooks                  list playbooks
+  surge-cli pending                    pending operator approvals
+  surge-cli approve <id>               approve a pending action
+
+Env:
+  SURGE_BROKER_URL          default http://127.0.0.1:8220
+  SURGE_TOKEN               default surge-operator-dev-token
+  SURGE_DEFAULT_TENANT_ID   default unset
+  SURGE_PRODUCT_NAME        default 'cli'
+"""
+from __future__ import annotations
+
+import argparse
+import asyncio
+import json
+import os
+import sys
+from typing import Any
+
+# Make the products SDK importable when running from a checkout.
+HERE = os.path.dirname(os.path.abspath(__file__))
+BROKER_PKG = os.path.normpath(os.path.join(HERE, ".."))
+if os.path.isdir(os.path.join(BROKER_PKG, "broker", "products_sdk")):
+    sys.path.insert(0, BROKER_PKG)
+
+from broker.products_sdk import (  # noqa: E402
+    SurgeClient,
+    SurgeUnreachable,
+)
+
+
+def _print_json(obj: Any) -> None:
+    print(json.dumps(obj, indent=2, default=str))
+
+
+def _parse_kv(args: list[str]) -> dict:
+    """[k=v, k=v, ...] -> dict, with json-detect for values that look like
+    objects/arrays/numbers/bools."""
+    out: dict[str, Any] = {}
+    for a in args:
+        if "=" not in a:
+            sys.stderr.write(f"bad param (missing =): {a}\n")
+            sys.exit(2)
+        k, v = a.split("=", 1)
+        if v and v[0] in "{[":
+            try:
+                out[k] = json.loads(v)
+                continue
+            except Exception:
+                pass
+        if v.lower() in ("true", "false"):
+            out[k] = v.lower() == "true"
+        elif v and v.lstrip("-").isdigit():
+            out[k] = int(v)
+        else:
+            out[k] = v
+    return out
+
+
+async def cmd_invoke(args) -> int:
+    surge = _client(args.product)
+    intent = " ".join(args.intent)
+    result = await surge.invoke(intent, tenant_id=args.tenant)
+    _print_json(result.raw)
+    return 0
+
+
+async def cmd_dispatch(args) -> int:
+    surge = _client(args.product)
+    params = _parse_kv(args.params or [])
+    result = await surge.dispatch(args.capability, params, tenant_id=args.tenant)
+    _print_json(result.raw)
+    return 0 if result.ok else 1
+
+
+async def cmd_capabilities(args) -> int:
+    surge = _client(args.product)
+    caps = await surge.list_capabilities()
+    if args.full:
+        _print_json(caps)
+    else:
+        for c in caps:
+            print(f"  {c['name']:25s}  {c['approval_class']:13s}  {c['description'].split('.')[0]}.")
+        print(f"\n{len(caps)} capabilities total.")
+    return 0
+
+
+async def cmd_playbooks(args) -> int:
+    surge = _client(args.product)
+    pbs = await surge.list_playbooks()
+    if args.full:
+        _print_json(pbs)
+    else:
+        for p in pbs:
+            print(f"  {p['name']:30s}  {p.get('approval_class','?'):13s}  {p.get('description','')[:80]}")
+        print(f"\n{len(pbs)} playbooks total.")
+    return 0
+
+
+async def cmd_pending(args) -> int:
+    surge = _client(args.product)
+    pending = await surge.list_pending_approvals()
+    if not pending:
+        print("(no pending approvals)")
+        return 0
+    for p in pending:
+        print(f"  {p['id']:30s}  {p.get('capability'):20s}  {p.get('actor_id', '')}  {p.get('created_at', '')}")
+    print(f"\n{len(pending)} pending.")
+    return 0
+
+
+async def cmd_approve(args) -> int:
+    surge = _client(args.product)
+    result = await surge.approve(args.approval_id)
+    _print_json(result.raw)
+    return 0 if result.ok else 1
+
+
+def _client(product: str | None) -> SurgeClient:
+    os.environ.setdefault("SURGE_PRODUCT_NAME", product or "cli")
+    return SurgeClient.from_env()
+
+
+def main(argv: list[str] | None = None) -> int:
+    p = argparse.ArgumentParser(
+        prog="surge-cli",
+        description="Talk to Surge from the terminal.",
+    )
+    p.add_argument("--tenant", help="override tenant_id for this call")
+    p.add_argument("--product", help="X-Surge-Product header value (default: cli)")
+
+    sub = p.add_subparsers(dest="command", required=True)
+
+    pi = sub.add_parser("invoke", help="natural-language intent")
+    pi.add_argument("intent", nargs="+", help="the ask")
+    pi.set_defaults(func=cmd_invoke)
+
+    pd = sub.add_parser("dispatch", help="call a capability by name")
+    pd.add_argument("capability")
+    pd.add_argument("params", nargs="*", help="k=v pairs (json values OK)")
+    pd.set_defaults(func=cmd_dispatch)
+
+    pc = sub.add_parser("capabilities", help="list registered capabilities")
+    pc.add_argument("--full", action="store_true", help="full JSON")
+    pc.set_defaults(func=cmd_capabilities)
+
+    pp = sub.add_parser("playbooks", help="list known playbooks")
+    pp.add_argument("--full", action="store_true", help="full JSON")
+    pp.set_defaults(func=cmd_playbooks)
+
+    pen = sub.add_parser("pending", help="list pending operator approvals")
+    pen.set_defaults(func=cmd_pending)
+
+    pa = sub.add_parser("approve", help="approve a pending action by id")
+    pa.add_argument("approval_id")
+    pa.set_defaults(func=cmd_approve)
+
+    args = p.parse_args(argv)
+
+    try:
+        return asyncio.run(args.func(args))
+    except SurgeUnreachable as e:
+        sys.stderr.write(f"surge unreachable: {e}\n")
+        return 3
+    except KeyboardInterrupt:
+        return 130
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

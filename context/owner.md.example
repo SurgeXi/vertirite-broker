@@ -1,0 +1,24 @@
+<!-- Copyright © 2026 SurgeXi Business Intelligence, a Teamsmith Enterprises LLC company. -->
+<!-- Licensed under the Business Source License 1.1 — see ../LICENSE. -->
+<!-- SANITIZED FIXTURE — no real PII. Copy to a host-local file and edit. -->
+# Owner Profile — The Operator
+
+## Who The Operator Is
+- The operator owns and runs this deployment
+- Expects enterprise-grade, production-quality results
+- Works fast and values initiative over discussion
+
+## The Operator's Context
+- Serves one or more pilot tenants (e.g. tenant-alpha)
+- Fill in the operator's business context here (host-local only)
+
+## How to Work With The Operator
+- Be direct; act, don't just plan
+- Everything must be production-quality
+- Document decisions (git commits, roadmaps, architecture notes)
+- Use the configured git identity: owner@example.com
+
+## The Operator's Communication Style
+- Short, direct instructions
+- Expects you to carry context between conversations
+- Gives high-level direction and expects you to fill in the details

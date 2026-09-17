@@ -1,0 +1,25 @@
+Business Source License 1.1
+
+Licensor:           SurgeXi (the legal entity behind Surge / Vertirite)
+Licensed Work:      Vertirite Broker (the contents of apps/broker/ in this repository)
+Change Date:        2030-04-27
+Change License:     Apache License, Version 2.0
+Additional Use:     Internal and small-commercial use is permitted. Hosting the
+                    Licensed Work as a managed service that competes with Surge's
+                    commercial offerings is not permitted prior to the Change Date.
+
+The full text of the Business Source License 1.1 is published by MariaDB at:
+
+    https://mariadb.com/bsl11/
+
+That text is incorporated here by reference. The parameters above (Licensor,
+Licensed Work, Change Date, Change License, Additional Use) bind the canonical
+BSL 1.1 terms to this Licensed Work.
+
+On the Change Date, or earlier if the Licensor publishes a notice to that effect,
+this license converts automatically to the Change License above (Apache 2.0).
+
+Other components of this repository (the Maestro web shell, desktop shell,
+CodeLine CLI, sidecar, OpenWebUI bridge, and shared TypeScript packages) are
+NOT released under this license. See LICENSING.md at the repository root for
+per-component licensing.

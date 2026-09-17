@@ -1,0 +1,21 @@
+<!-- Copyright © 2026 SurgeXi Business Intelligence, a Teamsmith Enterprises LLC company. -->
+<!-- Licensed under the Business Source License 1.1 — see ../LICENSE. -->
+<!-- SANITIZED FIXTURE — copy to a host-local file and edit. -->
+# Products
+
+## Vertirite (this product)
+- The control plane for AI agents: every action authenticated, classified by
+  risk, gated through policy, optionally held for human approval, and recorded
+  in a cryptographically attributable audit trail
+- The broker is the open-source (BSL 1.1) edge of the product line
+- Governs the chokepoints an action must cross (egress / irreversible /
+  credential) — deterministic, auditable, and running on the customer's own node
+
+## Key Principles Across All Products
+- Build correct, ironclad solutions — no band-aids
+- Human-in-the-loop at decision and exception points
+- Tenant isolation, audit trails, enterprise trust from day one
+
+## Product Boundaries
+Fill in host-local product boundaries here (what this deployment does and does
+not cover, and where to route out-of-scope requests).
