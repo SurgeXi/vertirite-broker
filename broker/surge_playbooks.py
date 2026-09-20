@@ -1,6 +1,6 @@
 # Copyright © 2026 SurgeXi Business Intelligence, a Teamsmith Enterprises LLC company. Licensed under the Business Source License 1.1 — see LICENSE.
 """Playbook loader. Reads Markdown playbooks from
-/opt/surgexi/config/playbooks/ (canonical) or a fallback dev path,
+/etc/vertirite/playbooks/ (canonical) or a fallback dev path,
 parses their YAML front-matter, and exposes match() / get() / index()
 for the invoke layer.
 
@@ -30,7 +30,7 @@ def _repo_relative_fallback() -> Path | None:
 
 
 PLAYBOOK_DIRS: list[Path] = [
-    Path(os.environ.get("SURGE_PLAYBOOKS_DIR", "/opt/surgexi/config/playbooks")),
+    Path(os.environ.get("SURGE_PLAYBOOKS_DIR", "/etc/vertirite/playbooks")),
     # Dev / scenario fallback — Brain-Ollama checkout next to the broker
     Path("/tmp/Brain-Ollama/config/playbooks"),
 ]
