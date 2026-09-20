@@ -161,7 +161,7 @@ if os.path.isdir(_webconsole_dir):
 
 # ---------------------------------------------------------------------------
 # Surge agent platform — capability registry, dispatcher, /v1/surge/*
-# Design: Brain-Ollama/docs/agent-node-platform-roadmap.md
+# Design: internal agent-node platform roadmap
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
@@ -254,8 +254,8 @@ async def health() -> HealthResponse:
 async def jwt_public_key() -> Response:
     """Return the broker's JWT signing public key in PEM format.
 
-    Fleet operators fetch this during agent install (see install-prod.sh
-    in Brain-Ollama) so each agent-noded can verify JWTs minted by the
+    Fleet operators fetch this during agent install so each agent-noded
+    can verify JWTs minted by the
     broker. Public material — no auth required."""
     from .jwt_keys import public_key_pem
     return Response(content=public_key_pem(), media_type="application/x-pem-file")
@@ -420,7 +420,7 @@ async def gdpr_delete_me(
 
 
 # ---------------------------------------------------------------------------
-# Peer-stream — surge speaks unprompted (Brain-Ollama#11, full SSE design).
+# Peer-stream — surge speaks unprompted (full SSE design).
 # /v1/peer-stream      GET  — SSE feed of unprompted messages for the user
 # /v1/peer-stream/post POST — Brain pushes new messages here (internal auth)
 # ---------------------------------------------------------------------------
@@ -480,8 +480,8 @@ async def peer_stream_post(request: Request):
 
 
 # ---------------------------------------------------------------------------
-# Customer support tickets — see Maestro-Ai#40 + SurgeXi-Music-Production-Edge#15
-# Cross-repo: Brain-Ollama ships the `surge-support` persona used by triage.
+# Customer support tickets
+# The `surge-support` persona is used by triage.
 # ---------------------------------------------------------------------------
 class TicketCreateReq(BaseModel):
     product: str = "general"

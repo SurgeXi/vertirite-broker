@@ -20,19 +20,19 @@ log = logging.getLogger("maestro.surge_playbooks")
 
 # Search order. First existing directory wins.
 def _repo_relative_fallback() -> Path | None:
-    """Brain-Ollama checkout that's a sibling of maestro-ai. Only valid
-    in dev — the container layout is too shallow for `parents[3]` to
-    work, so we guard it. Returns None inside the container."""
+    """Repo-relative playbooks checkout (dev only). The container layout
+    is too shallow for `parents[3]` to work, so we guard it. Returns None
+    inside the container."""
     try:
-        return Path(__file__).resolve().parents[3] / "Brain-Ollama" / "config" / "playbooks"
+        return Path(__file__).resolve().parents[3] / "vertirite" / "config" / "playbooks"
     except IndexError:
         return None
 
 
 PLAYBOOK_DIRS: list[Path] = [
     Path(os.environ.get("SURGE_PLAYBOOKS_DIR", "/etc/vertirite/playbooks")),
-    # Dev / scenario fallback — Brain-Ollama checkout next to the broker
-    Path("/tmp/Brain-Ollama/config/playbooks"),
+    # Dev / scenario fallback — playbooks checkout next to the broker
+    Path("/tmp/vertirite/playbooks"),
 ]
 _repo_fallback = _repo_relative_fallback()
 if _repo_fallback is not None:

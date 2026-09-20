@@ -129,6 +129,6 @@ Consumer repos that integrate this SDK should:
 
 1. Add a CROSS-REPO COORDINATION block to their CLAUDE.md describing the integration
 2. Open a thin PR that adds `SurgeClient.from_env()` calls in 1-2 places
-3. Add at least one playbook in `Brain-Ollama/config/playbooks/` if the product introduces a compound action surge should handle
+3. Add at least one playbook in your playbooks directory (e.g. `/etc/vertirite/playbooks`) if the product introduces a compound action surge should handle
 
 The SDK contract is versioned (see `surge_capabilities.SCHEMA_VERSION` in the broker). Breaking changes to that schema bump the version; consumer pins move forward at their own pace.

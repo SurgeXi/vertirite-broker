@@ -154,7 +154,7 @@ async def send_alert(
                 "message": full_message,
                 "node": node,
                 "timestamp": results["timestamp"],
-                "source": "maestro-ai",
+                "source": "vertirite-broker",
             }
             await send_webhook_alert(settings.alert_webhook_url, payload)
             results["channels"]["webhook"] = {"status": "sent"}
