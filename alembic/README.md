@@ -3,11 +3,11 @@
 
 This folder contains the PostgreSQL-ready migration scaffold for the broker.
 
-Run migrations with the repo virtualenv:
+Run migrations from the repository root using your virtualenv:
 
 ```bash
-cd "/Users/toddsmith/Documents/New project/Maestro/apps/broker"
-../../.venv/bin/alembic upgrade head
+# from the vertirite-broker repo root, with your venv active
+python -m alembic upgrade head
 ```
 
 Use the current broker env vars to control the DB target.
