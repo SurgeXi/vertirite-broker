@@ -335,7 +335,7 @@ async def send_test_alert() -> dict:
         severity="info",
         title="Test Alert",
         message="This is a test alert from Maestro AI. If you received this, your alert channel is working correctly.",
-        node="maestro-broker",
+        node="vertirite-broker",
     )
 
 

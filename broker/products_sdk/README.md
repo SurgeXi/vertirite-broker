@@ -8,7 +8,7 @@ Minimal async Python client every SurgeXi product uses to invoke Surge.
 While we're still bundling this with the broker, consumer repos pull the package via:
 
 ```bash
-pip install "git+https://github.com/SurgeXi/Maestro-Ai.git#egg=surge-cmd-xi-broker&subdirectory=apps/broker"
+pip install "git+https://github.com/SurgeXi/vertirite-broker.git"
 ```
 
 That's heavyweight (you get the whole broker). When usage stabilises (Day 5 of the roadmap), we'll extract this directory into a published `surgexi-products-sdk` package.
