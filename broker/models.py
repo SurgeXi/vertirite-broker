@@ -166,7 +166,7 @@ class ChatResponse(BaseModel):
     # Which peer produced the reply. "maestro" (default) or "surge-peer" when
     # a user addressed @surge directly. UI can bubble differently per source.
     source: Optional[str] = None
-    # Day-7 disagreement UX (Brain-Ollama PR #23 spec). When set: Surge replied
+    # Day-7 disagreement UX. When set: Surge replied
     # but Maestro had a different read on the request. UI renders BOTH.
     # Shape: {"maestro_take": str, "summary": str}
     peer_disagreement: Optional[Dict[str, Any]] = None

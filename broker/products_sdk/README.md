@@ -8,7 +8,7 @@ Minimal async Python client every SurgeXi product uses to invoke Surge.
 While we're still bundling this with the broker, consumer repos pull the package via:
 
 ```bash
-pip install "git+https://github.com/SurgeXi/Maestro-Ai.git#egg=surge-cmd-xi-broker&subdirectory=apps/broker"
+pip install "git+https://github.com/SurgeXi/vertirite-broker.git"
 ```
 
 That's heavyweight (you get the whole broker). When usage stabilises (Day 5 of the roadmap), we'll extract this directory into a published `surgexi-products-sdk` package.
@@ -129,6 +129,6 @@ Consumer repos that integrate this SDK should:
 
 1. Add a CROSS-REPO COORDINATION block to their CLAUDE.md describing the integration
 2. Open a thin PR that adds `SurgeClient.from_env()` calls in 1-2 places
-3. Add at least one playbook in `Brain-Ollama/config/playbooks/` if the product introduces a compound action surge should handle
+3. Add at least one playbook in your playbooks directory (e.g. `/etc/vertirite/playbooks`) if the product introduces a compound action surge should handle
 
 The SDK contract is versioned (see `surge_capabilities.SCHEMA_VERSION` in the broker). Breaking changes to that schema bump the version; consumer pins move forward at their own pace.

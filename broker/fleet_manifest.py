@@ -45,7 +45,7 @@ def _utc_now() -> datetime:
 # Roles + lifecycle constants
 # ---------------------------------------------------------------------------
 
-# Matches the fleet-roles.json discipline from Brain-Ollama/CLAUDE.md so a
+# Matches the fleet-roles.json discipline used across the fleet so a
 # Vertirite-governed customer fleet uses the same vocabulary.
 FLEET_ROLES = (
     "production-core",      # broker, policy engine, audit DB hosts

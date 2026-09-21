@@ -1,5 +1,5 @@
 # Copyright © 2026 SurgeXi Business Intelligence, a Teamsmith Enterprises LLC company. Licensed under the Business Source License 1.1 — see LICENSE.
-"""peer_stream.py — surge-as-peer unprompted-speech channel (Brain-Ollama#11).
+"""peer_stream.py — surge-as-peer unprompted-speech channel.
 
 Three jobs:
 
