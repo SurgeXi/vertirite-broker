@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 def utc_now() -> datetime:
@@ -233,3 +233,30 @@ class AdminGovernFindingRequest(BaseModel):
     role: Optional[str] = "production-core"
     tags: Optional[list[str]] = None
     notes: Optional[str] = ""
+
+
+class FlowRecord(BaseModel):
+    """One east-west/north-south connection flow posted to
+    POST /v1/discovery/ingest/flow. Field aliases accept the alternate names a
+    NetFlow/Zeek/eBPF collector may emit (source/destination/port) so existing
+    collectors keep working; `dst_port` is typed `int` so a non-numeric port is a
+    clean 422 instead of a silently-accepted junk finding. `extra="allow"` keeps
+    any collector-specific keys the analyzer ignores."""
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
+    src: Optional[str] = Field(default=None, validation_alias=AliasChoices("src", "source"))
+    dst: Optional[str] = Field(default=None, validation_alias=AliasChoices("dst", "destination"))
+    dst_port: Optional[int] = Field(default=None, validation_alias=AliasChoices("dst_port", "port"))
+    proto: Optional[str] = None
+    plane: Optional[str] = None  # advisory; the analyzer re-derives it
+
+
+class DiscoveryFlowIngestRequest(BaseModel):
+    """Body for POST /v1/discovery/ingest/flow: either a list of typed flows OR a
+    raw sensor log (Zeek conn.log). Replaces the old untyped `payload: dict`, so
+    wrong types (e.g. `flows` as a string, or a non-int `dst_port`) return 422
+    rather than a 500 or a silent accept."""
+    model_config = ConfigDict(extra="allow")
+    tenant_id: str = "default"
+    flows: Optional[list[FlowRecord]] = None
+    raw_log: Optional[str] = None
+    format: Optional[str] = None  # e.g. "zeek"
