@@ -19,6 +19,15 @@ class SurgeMode(str, Enum):
     ESCALATION_REQUIRED = "ESCALATION_REQUIRED"
 
 
+class LivenessResponse(BaseModel):
+    """Minimal, UNAUTHENTICATED liveness. Deliberately carries NO internal
+    topology (no DB host, environment, surge-core mode, or reachability) — those
+    moved to the authenticated /v1/health so an anonymous caller on the public
+    demo can't read the deployment's internals."""
+    status: str = "ok"
+    service: str = "surge-operator-broker"
+
+
 class HealthResponse(BaseModel):
     status: str = "ok"
     service: str = "surge-operator-broker"

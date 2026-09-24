@@ -77,6 +77,7 @@ from .models import (
     ChatResponse,
     DiscoveryFlowIngestRequest,
     HealthResponse,
+    LivenessResponse,
     ProjectCreateRequest,
     ProjectRecord,
     AuditEventRecord,
@@ -261,8 +262,21 @@ async def startup() -> None:
     load_plugins()
 
 
-@app.get("/health", response_model=HealthResponse)
-async def health() -> HealthResponse:
+@app.get("/health", response_model=LivenessResponse)
+async def health() -> LivenessResponse:
+    """PUBLIC liveness — intentionally minimal. Returns only {status, service}
+    so an anonymous caller (the endpoint is exposed on the public demo) cannot
+    read internal topology. The detailed health lives at /v1/health behind auth."""
+    return LivenessResponse()
+
+
+@app.get("/v1/health", response_model=HealthResponse)
+async def health_detail(
+    actor: AuthContext = Depends(require_bearer_token),
+) -> HealthResponse:
+    """Authenticated detailed health — DB target (creds redacted), environment,
+    surge-core mode, and component reachability. Behind the bearer token because
+    it discloses deployment topology; operators/dashboards authenticate."""
     mode = await fetch_mode()
     uptime = time.time() - _startup_time if _startup_time else 0.0
     return HealthResponse(
