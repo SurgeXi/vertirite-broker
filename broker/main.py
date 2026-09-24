@@ -75,6 +75,7 @@ from .models import (
     ChatMessageRecord,
     ChatRequest,
     ChatResponse,
+    DiscoveryFlowIngestRequest,
     HealthResponse,
     ProjectCreateRequest,
     ProjectRecord,
@@ -2132,7 +2133,7 @@ async def discovery_sources(
 
 @app.post("/v1/discovery/ingest/flow")
 async def discovery_ingest_flow(
-    payload: dict,
+    payload: DiscoveryFlowIngestRequest,
     actor: AuthContext = Depends(require_platform_admin),
 ):
     """Ingest connection FLOWS — the east-west / internal tier the egress + DNS
@@ -2142,13 +2143,22 @@ async def discovery_ingest_flow(
     network plane (north-south | east-west | host-local).
     Body: {flows: [{src, dst, dst_port, proto}], tenant_id} OR
           {raw_log, format: "zeek", tenant_id}.
+
+    The body is a typed model: a non-numeric `dst_port` or a mistyped `flows`
+    field is rejected with 422 rather than crashing (500) or being silently
+    ingested as a junk finding.
     """
     from .discovery import network_sensor as ns
-    tenant_id = (payload or {}).get("tenant_id") or "default"
-    flows = (payload or {}).get("flows")
-    raw = (payload or {}).get("raw_log")
-    if raw and not flows:
-        flows = ns.parse_zeek_conn(raw)
+    tenant_id = payload.tenant_id or "default"
+    # Emit canonical field names (src/dst/dst_port) that analyze_flow reads,
+    # preserving any extra collector keys; alias inputs are already normalized.
+    flows = (
+        [f.model_dump(exclude_none=True) for f in payload.flows]
+        if payload.flows is not None
+        else None
+    )
+    if payload.raw_log and not flows:
+        flows = ns.parse_zeek_conn(payload.raw_log)
     return ns.analyze_flow(flows or [], tenant_id=tenant_id)
 
 
