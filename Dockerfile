@@ -33,7 +33,11 @@ RUN mkdir -p /data/logs
 
 ENV SURGE_OPERATOR_ENVIRONMENT=production
 ENV SURGE_OPERATOR_DATABASE_URL=sqlite+pysqlite:////data/broker.db
-ENV SURGE_OPERATOR_BROKER_API_TOKEN=change-me-in-production
+# SURGE_OPERATOR_BROKER_API_TOKEN is the platform_admin credential and is
+# deliberately NOT baked into the image — supply a unique secret at runtime
+# (-e SURGE_OPERATOR_BROKER_API_TOKEN=... / compose ${VERTIRITE_BROKER_TOKEN:?}).
+# The broker fails closed at startup in production if it is unset or a known
+# placeholder, so a default build cannot serve with a public token.
 ENV SURGE_OPERATOR_BOOTSTRAP_USER_ID=operator
 # The governor-of-record upstream (optional; the broker fails closed to
 # LOCKDOWN when it is unreachable). Loopback default; override per deployment.
