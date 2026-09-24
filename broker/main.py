@@ -196,10 +196,37 @@ def _redact_database_target(url: str) -> str:
     return f"{scheme}://***@{host_part}"
 
 
+# Known placeholder values for the platform_admin token — the code default, the
+# (now-removed) Docker ENV default, and the .env.example samples. A published
+# image must never serve with any of these; auth.py maps broker_api_token ->
+# platform_admin / full admin.
+_PLACEHOLDER_ADMIN_TOKENS = frozenset({
+    "", "change-me-in-production", "surge-operator-dev-token",
+    "change-me-token", "change-me-broker-token",
+})
+
+
+def _assert_admin_token_configured() -> None:
+    """Fail CLOSED in production if the platform_admin token is unset or a known
+    placeholder. The Dockerfile ships NO default; the operator supplies one at
+    runtime. Non-production keeps the code default so local runs work unchanged."""
+    if settings.environment == "production" and (
+        not settings.broker_api_token
+        or settings.broker_api_token in _PLACEHOLDER_ADMIN_TOKENS
+    ):
+        raise RuntimeError(
+            "Refusing to start: SURGE_OPERATOR_BROKER_API_TOKEN is unset or a known "
+            "placeholder. It is the platform_admin credential — set it to a unique "
+            "secret per deployment. In production the broker fails closed rather than "
+            "serve a value that is public knowledge."
+        )
+
+
 @app.on_event("startup")
 async def startup() -> None:
     global _startup_time
     _startup_time = time.time()
+    _assert_admin_token_configured()
     init_db()
     # Gate 01 provisioning visibility — never let an ungoverned box look governed.
     if settings.governor_token:
