@@ -163,6 +163,10 @@ class Settings(BaseSettings):
     alert_email_smtp_port: int = 587
     alert_email_smtp_user: str = ""
     alert_email_smtp_pass: str = ""
+    # STARTTLS to the operator's relay (default on). Off only for an on-prem relay with no TLS.
+    alert_email_starttls: bool = True
+    # PEM bundle for a relay whose certificate is issued by an internal CA ("" = system CAs).
+    alert_email_ca_file: str = ""
     alert_webhook_enabled: bool = False
     alert_webhook_url: str = ""
     # Closed-loop enforcement VERIFY: run a real prober (DNS resolution) to confirm
