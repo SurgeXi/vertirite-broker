@@ -12,6 +12,12 @@ Matches docs/openapi-governance.json. Only dependency: httpx (pip install httpx)
     if decision["status"] == "approved":
         ...  # your system executes the action; Vertirite records, it does not execute
 
+    # Or, fail-closed in one call: True ONLY when a person approved. Anything else (denied,
+    # timed out, governance refused because no paid license covers the node, auth or network
+    # errors) is False, so the action does not run.
+    if vr.gate("payments.release", "Release batch 2026-10-13 ($41,200)", timeout_s=1800):
+        ...
+
 An unanswered request is denied at its deadline: the safe default is always "no".
 """
 from __future__ import annotations
@@ -26,9 +32,12 @@ TIMEOUT_ACTOR = "vertirite-timeout"  # decided_by when nobody answered in time (
 
 
 class Vertirite:
-    def __init__(self, base_url: str, token: str, timeout: float = 15.0):
-        self._c = httpx.Client(base_url=base_url.rstrip("/"), timeout=timeout,
-                               headers={"Authorization": f"Bearer {token}"})
+    def __init__(self, base_url: str, token: str, timeout: float = 15.0,
+                 client: Optional[httpx.Client] = None):
+        self._c = client or httpx.Client(base_url=base_url.rstrip("/"), timeout=timeout,
+                                         headers={"Authorization": f"Bearer {token}"})
+        if client is not None:
+            self._c.headers["Authorization"] = f"Bearer {token}"
 
     def request_approval(self, tool_name: str, summary: str, payload: Optional[dict] = None,
                          timeout_s: Optional[int] = None) -> dict[str, Any]:
@@ -39,6 +48,17 @@ class Vertirite:
         r = self._c.post("/v1/approvals", json=body)
         r.raise_for_status()
         return r.json()
+
+    def gate(self, tool_name: str, summary: str, payload: Optional[dict] = None,
+             timeout_s: Optional[int] = None, poll_s: float = 5.0, max_wait_s: float = 86400) -> bool:
+        """FAIL-CLOSED: True only when a person APPROVED this request. Denied, timed out,
+        governance refused (HTTP 403, e.g. no paid license for this node), authentication or
+        network errors, or anything unexpected: False. Never let an action through on an error."""
+        try:
+            req = self.request_approval(tool_name, summary, payload, timeout_s)
+            return self.wait_for_decision(req["id"], poll_s, max_wait_s).get("status") == "approved"
+        except Exception:  # noqa: BLE001 — every failure is a "no"
+            return False
 
     def approvals(self, status: Optional[str] = None, limit: int = 50) -> list[dict[str, Any]]:
         params: dict[str, Any] = {"limit": limit}
