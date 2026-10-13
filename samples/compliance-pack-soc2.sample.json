@@ -1,0 +1,67 @@
+{
+  "audit_summary": {
+    "event_count": 7,
+    "period_first": "2026-09-02T14:05:11Z",
+    "period_last": "2026-09-28T08:45:30Z"
+  },
+  "control_count": 6,
+  "controls": [
+    {
+      "control_id": "CC6.1",
+      "evidence_source": "audit_summary",
+      "status": "evidenced",
+      "title": "Logical access \u2014 identification & authentication",
+      "vertirite_mechanism": "Mutual TLS + signed JWT (ES256); per-tenant isolation."
+    },
+    {
+      "control_id": "CC6.6",
+      "evidence_source": "coverage_summary",
+      "status": "evidenced",
+      "title": "Boundary protection",
+      "vertirite_mechanism": "Egress/DNS discovery + containment chokepoints (egress/credential/irreversible)."
+    },
+    {
+      "control_id": "CC7.2",
+      "evidence_source": "coverage_summary",
+      "status": "evidenced",
+      "title": "System monitoring for anomalies",
+      "vertirite_mechanism": "Continuous discovery of ungoverned AI/automation + real-time alerting on new threats."
+    },
+    {
+      "control_id": "CC7.3",
+      "evidence_source": "audit_summary",
+      "status": "evidenced",
+      "title": "Incident evaluation & response",
+      "vertirite_mechanism": "Human-in-the-loop approval queue + out-of-band LOCKDOWN mode authority."
+    },
+    {
+      "control_id": "CC8.1",
+      "evidence_source": "audit_summary",
+      "status": "evidenced",
+      "title": "Change management",
+      "vertirite_mechanism": "Capability registry \u2014 adding a capability is a code-reviewed change."
+    },
+    {
+      "control_id": "A1.2",
+      "evidence_source": "audit_summary",
+      "status": "evidenced",
+      "title": "Audit trail / availability of evidence",
+      "vertirite_mechanism": "Audit log of every governed action and approval decision (authenticated actor, action, time), rows tagged by tenant."
+    }
+  ],
+  "coverage_summary": {
+    "coverage_pct": 41.7,
+    "governed": 10,
+    "ungoverned": 14,
+    "ungoverned_ai_services": 2,
+    "ungoverned_suspicious": 3,
+    "witnessed": 24
+  },
+  "disclaimer": "Maps Vertirite mechanisms to framework controls with the evidence in this pack. Not an assertion of certification.",
+  "fingerprint": "b7feacb4defcc6b5c1445d1cf06feb4d10bb614ff8d261e8eb4c3741d876a1be",
+  "framework": "soc2",
+  "framework_name": "SOC 2 (Trust Services Criteria)",
+  "generated_at": "2026-09-30T23:59:59+00:00",
+  "tenant_id": "example-tenant",
+  "type": "vertirite.compliance.pack"
+}

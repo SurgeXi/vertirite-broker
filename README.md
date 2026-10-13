@@ -1,142 +1,59 @@
-<!-- Copyright © 2026 SurgeXi Business Intelligence, a Teamsmith Enterprises LLC company. Licensed under the Business Source License 1.1 — see LICENSE. -->
-# Vertirite Broker
+<!-- Copyright © 2026 SurgeXi Business Intelligence, a Teamsmith Enterprises LLC company. -->
+# Vertirite
 
-> **Control plane for AI agents.** Every AI action authenticated, classified by
-> risk, gated through policy, optionally held for human approval, and recorded
-> in an audit trail.
+> **Control plane for AI agents.** Every AI action authenticated, classified by risk, gated
+> through policy, held for a human when it matters, and recorded in an audit trail.
 
-This is the open-source (BSL 1.1) broker at the core of Vertirite. It runs on
-the customer's own node; their data never leaves. It is a Python / FastAPI
-service providing:
+Vertirite runs on your own node. Your data never leaves it. The control plane contains no model
+and calls none: it authorizes and records; it does not execute.
 
-- sessions, per-tenant project context, and capability registry
-- deterministic **containment** (govern by the chokepoint an action crosses —
-  egress / irreversible / credential — not by tool name)
-- **discovery**: coverage map, exposure report, witnessed-finding intake, network sensors
-- **compliance** report packs and framework controls
-- **licensing** / entitlements (governance is always free; premium modules are gated)
-- an **approval gate**: request → notify → re-notify → approve / deny, and an unanswered
-  request is **denied** at its deadline; every step is written to the **audit** trail, and the
-  compliance export is Ed25519-sealed when a node signing key is configured
-- **local mode authority** (`/v1/mode`) with an optional tighten-only upstream client
+This repository is the **public showcase** for Vertirite: what it does, how it is built, the
+governance API, a client, and a sample of the evidence an auditor receives. The product source
+is distributed to approved pilot customers.
 
-> This broker is extracted from the SurgeXi monorepo with all fleet-operations
-> tooling removed (SSH/exec/filesystem operator surface, agent executor,
-> self-heal, tunnel, node orchestration), contains no model, and is
-> record-only. It boots and serves the full governance surface standalone.
+## What it does
 
-## Design invariants: authorizes, does not execute — and contains no model
+- **Discovery:** finds the AI and automation already touching your systems and maps coverage:
+  what is governed, what is not, and what an ungoverned caller can reach.
+- **Approval gate:** an action that can hurt you waits for a person. The request is announced
+  (console, email, chat webhook), re-announced while unanswered, and **denied at its deadline**.
+  The safe default is always "no", and it is not configurable.
+- **Containment:** governed by the chokepoint an action crosses (egress, irreversible change,
+  credential use), not by tool name.
+- **Mode authority:** AUTONOMOUS / CONTROLLED / ESCALATION_REQUIRED / LOCKDOWN, set out of band.
+  The AI cannot change its own mode.
+- **Audit:** every approval request and decision is recorded: who asked, who decided, what,
+  when, and under which mode. Evidence packs map that record to SOC 2 and HIPAA controls.
 
-- **The broker records and audits decisions; it does not execute them.**
-  Approving a request records the decision (actor, notes, timestamp) and writes a
-  audit event — it does not run the action. Executing an approved action is
-  the integrating system's responsibility. There is no node-exec, shell, SSH,
-  terminal, or filesystem operator surface in this tree.
-- **The broker contains no model and calls none on its own behalf.** No local
-  model, no inference SDK, no gateway/RAG reach. Bring-your-own-cloud is *governed
-  passthrough* only: point an app's SDK `base_url` at `/v1/proxy/openai/v1` and the
-  broker gates → audits → forwards the call the customer's own agent makes to the
-  customer's own provider. `/v1/keys/{provider}/test` validates a customer's own
-  key (a non-generating GET); `/v1/models` is a static provider catalog. The broker
-  governs the calls; it does not make them.
-- These invariants are enforced at build time by `broker/import_guard_test.py`
-  (model + model-reach + exec + topology) — a regression fails CI.
+## What is true today, and what is not yet
 
-## Outbound network calls
+| | |
+|---|---|
+| Audit records | Every request and decision recorded with the authenticated actor, the action and the time. |
+| Evidence pack | Carries a sha256 fingerprint of its contents, so any later change to the pack is detectable. See [`samples/`](samples/). |
+| Compliance report seal | Ed25519 signature by the node, when the node has a signing key configured. No deployed node has one yet; until then reports carry the sha256 fingerprint only. |
+| Tamper-evident audit log | **In progress, not shipped.** Audit rows are plain database records today. Hash-chained, signed rows and a verification tool for auditors are being built. |
 
-The default posture is **Sovereign / no phone-home**: out of the box the broker
-makes **no outbound calls**, and in particular **none to SurgeXi**. Every outbound
-path below is off by default and is turned on, and pointed, by the operator — the
-broker never calls a destination the operator did not configure.
+## In this repository
 
-| Destination | When | Default | Configured by | What is sent |
-|---|---|---|---|---|
-| **Any SurgeXi-operated endpoint** | **never** | — | — | **nothing — the broker does not phone home** |
-| Your own `surge-core` governor (optional upstream) | mode read-through / approval forward, if enabled | loopback (`127.0.0.1`); forwarding **off** | `SURGE_OPERATOR_SURGE_CORE_URL`, `…_FORWARD_APPROVALS_TO_SURGE_CORE` | governance state (mode, approval decision) |
-| Your own cloud provider, via `/v1/proxy/openai` | when *your* agent calls the governed passthrough | disabled unless enabled | `SURGE_OPERATOR_PROXY_*` (your BYO key) | your agent's own request, forwarded |
-| A provider's model-list endpoint, via `/v1/keys/{provider}/test` | operator validates a BYO key | on-demand only | operator action (your key) | nothing — a non-generating auth check |
-| Your own alert channels: SMTP email, a webhook you own, Pushover | on an alert or an approval request / reminder / timeout, if enabled | **off** | `SURGE_OPERATOR_ALERT_*` | alert or approval text (summary, action name, approval id, deadline) |
-| A coverage **beacon** / intelligence feed | periodic, if a URL is set | **empty = disabled** | `SURGE_OPERATOR_PROTECTION_BEACON_URL`, `…_INTELLIGENCE_FEED_URL` | coverage counts (you choose the destination) |
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): how Vertirite is built and the invariants it
+  keeps.
+- [`docs/openapi-governance.json`](docs/openapi-governance.json): the governance API (approval
+  gate, your audit feed, mode, health), generated from the product source.
+- [`sdk/python/vertirite_client.py`](sdk/python/vertirite_client.py): a small client for that
+  API: request an approval, wait for the decision, read your audit feed.
+- [`samples/`](samples/): a sample SOC 2 evidence pack built by the product from synthetic data,
+  and a standalone script that verifies its fingerprint (and a report seal, where one exists).
 
-There is no telemetry, license-server call, or hardcoded remote in the tree — the
-beacon has no default URL, so it is dark until you point it somewhere you control.
+## Get Vertirite
 
-## Local setup
-
-```bash
-python3 -m venv .venv && . .venv/bin/activate
-pip install .
-cp .env.example .env   # then edit
-SURGE_OPERATOR_DATABASE_URL="sqlite+pysqlite:////absolute/path/to/broker.db" \
-SURGE_OPERATOR_BROKER_API_TOKEN="change-me-broker-token" \
-  python -m uvicorn broker.main:app --host 127.0.0.1 --port 8220
-```
-
-## Governance endpoints (selected)
-
-- `GET  /health`, `GET /v1/me`, `GET /v1/entitlements`
-- `GET  /v1/mode`, `POST /v1/mode` (governor-credential gated)
-- `GET  /v1/discovery/coverage`, `GET /v1/discovery/exposure.json|.pdf`
-- `POST /v1/discovery/ingest/egress|dns|flow`, `POST /v1/agent/witnessed`
-- `POST /v1/containment/classify`, `GET /v1/integrity/*`
-- `GET  /v1/compliance/pack|report|controls`
-- `POST /v1/approvals` (ask a human), `GET /v1/approvals?status=pending`,
-  `POST /v1/approvals/{id}/approve|deny` (only a pending request; otherwise 409)
-- `GET  /v1/audit/me`, `GET /v1/audit-events`
-
-All `/v1/*` endpoints require `Authorization: Bearer <token>`.
-
-## Provisioning visibility (fail-loud defaults)
-
-The broker never *silently* looks healthy when it is running on defaults:
-
-- **`governed`** (in `/v1/entitlements`): `false` until a governor credential
-  (`SURGE_OPERATOR_GOVERNOR_TOKEN`) is provisioned — `POST /v1/mode` returns 503 until then.
-- **`context_source`** (in `/v1/entitlements`): `"fixtures"` until
-  `SURGE_OPERATOR_CONTEXT_DIR` points at a host-local directory of real `*.md`
-  context files; a startup WARNING is logged while serving fixtures. See `context/README.md`.
-
-Approval forwarding is opt-in (`SURGE_OPERATOR_FORWARD_APPROVALS_TO_SURGE_CORE=false`
-by default); when enabled, guarded requests also submit a task to the upstream core.
-
-## Migrations
-
-PostgreSQL is the target runtime database; local validation runs on SQLite.
-
-```bash
-env SURGE_OPERATOR_DATABASE_URL="sqlite+pysqlite:////absolute/path/to/broker.db" \
-  .venv/bin/alembic upgrade head
-```
-
-## Approval gate
-
-`POST /v1/approvals` (`tool_name`, `summary`, optional `payload`, `timeout_s`) stores a
-**pending** request and announces it on every alert channel the operator enabled. While it
-waits it is re-announced every `SURGE_OPERATOR_APPROVAL_RENOTIFY_S` (default 900 s), at most
-`…_APPROVAL_MAX_REMINDERS` times (default 3). At its deadline (`timeout_s`, default
-`…_APPROVAL_TIMEOUT_S` = 3600 s, capped at `…_APPROVAL_TIMEOUT_MAX_S`) it is **denied**
-automatically. That default is not configurable: an unanswered request is never approved.
-Only a pending request can be decided, so a late answer cannot overturn a timeout or an
-earlier decision (HTTP 409). Each step is audited: `approval.requested`, `approval.notified`
-(with the channels that took it), `approval.approved` / `approval.denied` (with who decided),
-and `approval.timeout_denied`. Set `…_APPROVAL_CONSOLE_URL` to your own console's address so
-the notification says where to decide.
-
-## Known limitations
-
-Called out plainly so a reader isn't surprised:
-
-- **Approvals are notified on the channels you configure on this broker:** the console,
-  SMTP email, a webhook you own, and Pushover. There is no mobile push app yet. A
-  phone-push companion is planned and is **not** a channel today.
-- **The bundled console's "capabilities" tab is inert here.** It targeted the
-  surge agent-tasking surface, which is not part of this governance-only broker;
-  the tab degrades gracefully to "unavailable." The live governance flow is
-  discovery → containment classify → govern → audit.
-- **BYO-cloud is passthrough only.** The broker validates and governs calls to a
-  provider you configure with your own key; it ships with no model and no provider
-  credentials of its own.
+- **See it:** [vertirite.com/demo](https://vertirite.com/demo)
+- **Request a demo or a download:** email **sales@surgexi.com** with your name, company and role.
+  Downloads are registered and approved per organization.
+- **Pricing and pilots:** [vertirite.com/pricing](https://vertirite.com/pricing)
 
 ## License
 
-Business Source License 1.1 — see `LICENSE`. Converts to Apache 2.0 on the Change Date.
+Prior public versions of this repository, including the broker source in its git history,
+remain available under their original license, the Business Source License 1.1 (see
+[`LICENSE`](LICENSE)). That grant is unchanged for those versions.
