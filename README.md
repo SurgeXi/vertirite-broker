@@ -3,7 +3,7 @@
 
 > **Control plane for AI agents.** Every AI action authenticated, classified by
 > risk, gated through policy, optionally held for human approval, and recorded
-> in a cryptographically attributable audit trail.
+> in an audit trail.
 
 This is the open-source (BSL 1.1) broker at the core of Vertirite. It runs on
 the customer's own node; their data never leaves. It is a Python / FastAPI
@@ -29,7 +29,7 @@ service providing:
 
 - **The broker records and audits decisions; it does not execute them.**
   Approving a request records the decision (actor, notes, timestamp) and writes a
-  signed audit event — it does not run the action. Executing an approved action is
+  audit event — it does not run the action. Executing an approved action is
   the integrating system's responsibility. There is no node-exec, shell, SSH,
   terminal, or filesystem operator surface in this tree.
 - **The broker contains no model and calls none on its own behalf.** No local
