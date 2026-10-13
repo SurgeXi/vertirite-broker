@@ -47,13 +47,15 @@ is distributed to approved pilot customers.
 
 ## Get Vertirite
 
-- **See it:** [vertirite.com/demo](https://vertirite.com/demo)
-- **Request a demo or a download:** email **sales@surgexi.com** with your name, company and role.
-  Downloads are registered and approved per organization.
-- **Pricing and pilots:** [vertirite.com/pricing](https://vertirite.com/pricing)
+Request a demo at [vertirite.com/demo](https://vertirite.com/demo). Evaluations, pilots and subscriptions:
+[vertirite.com/pricing](https://vertirite.com/pricing).
 
 ## License
 
-Prior public versions of this repository, including the broker source in its git history,
-remain available under their original license, the Business Source License 1.1 (see
-[`LICENSE`](LICENSE)). That grant is unchanged for those versions.
+Copyright © 2026 Teamsmith Enterprises LLC, doing business as SurgeXi Business Intelligence. All rights reserved.
+
+**Showcase content.** The documentation, architecture description, API description and samples in this repository are provided so you can understand and evaluate Vertirite. You may read them and link to them. No other rights are granted, and nothing here grants any right to use the Vertirite software, which is available only under the Vertirite Software License after an approved request at vertirite.com.
+
+**Client library.** The client library in `sdk/` is licensed under the Apache License, Version 2.0, so you can use it to connect your own systems to a licensed Vertirite installation.
+
+**Earlier versions.** Earlier commits in this repository's history were published under the Business Source License 1.1. Those grants continue to apply to those earlier versions only. They do not apply to anything published after October 13, 2026, to the Vertirite software we distribute today, or to any later version.

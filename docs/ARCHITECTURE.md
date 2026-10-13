@@ -32,7 +32,7 @@ broker never calls a destination the operator did not configure.
 | Destination | When | Default | Configured by | What is sent |
 |---|---|---|---|---|
 | **Any SurgeXi-operated endpoint** | **never** | — | — | **nothing — the broker does not phone home** |
-| Your own `surge-core` governor (optional upstream) | mode read-through / approval forward, if enabled | loopback (`127.0.0.1`); forwarding **off** | `SURGE_OPERATOR_SURGE_CORE_URL`, `…_FORWARD_APPROVALS_TO_SURGE_CORE` | governance state (mode, approval decision) |
+| Your own upstream governor (optional) | mode read-through / approval forward, if enabled | loopback (`127.0.0.1`); forwarding **off** | `SURGE_OPERATOR_SURGE_CORE_URL`, `…_FORWARD_APPROVALS_TO_SURGE_CORE` | governance state (mode, approval decision) |
 | Your own cloud provider, via `/v1/proxy/openai` | when *your* agent calls the governed passthrough | disabled unless enabled | `SURGE_OPERATOR_PROXY_*` (your BYO key) | your agent's own request, forwarded |
 | A provider's model-list endpoint, via `/v1/keys/{provider}/test` | operator validates a BYO key | on-demand only | operator action (your key) | nothing — a non-generating auth check |
 | Your own alert channels: SMTP email, a webhook you own, Pushover | on an alert or an approval request / reminder / timeout, if enabled | **off** | `SURGE_OPERATOR_ALERT_*` | alert or approval text (summary, action name, approval id, deadline) |
@@ -76,7 +76,7 @@ Called out plainly so a reader isn't surprised:
   SMTP email, a webhook you own, and Pushover. There is no mobile push app yet. A
   phone-push companion is planned and is **not** a channel today.
 - **The bundled console's "capabilities" tab is inert here.** It targeted the
-  surge agent-tasking surface, which is not part of this governance-only broker;
+  agent-tasking surface, which is not part of this governance-only broker;
   the tab degrades gracefully to "unavailable." The live governance flow is
   discovery → containment classify → govern → audit.
 - **BYO-cloud is passthrough only.** The broker validates and governs calls to a
