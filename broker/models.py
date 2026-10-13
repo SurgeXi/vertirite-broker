@@ -112,10 +112,26 @@ class ApprovalRecord(BaseModel):
     surge_task_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    # Approval gate lifecycle (broker/approval_gate.py)
+    decision_notes: str = ""
+    decided_by: Optional[str] = None
+    expires_at: Optional[datetime] = None
+    notify_count: int = 0
+    last_notified_at: Optional[datetime] = None
 
 
 class ApprovalDecisionRequest(BaseModel):
     decision_notes: str = ""
+
+
+class ApprovalCreateRequest(BaseModel):
+    """An integrating system asks a human before a gated action (POST /v1/approvals)."""
+    tool_name: str = Field(min_length=1, max_length=128)
+    summary: str = Field(min_length=1, max_length=2000)
+    payload: Dict[str, Any] = Field(default_factory=dict)
+    session_id: str = Field(default="", max_length=64)
+    # Seconds until the request is DENIED if nobody answers (clamped to 60..approval_timeout_max_s).
+    timeout_s: Optional[int] = Field(default=None, ge=60)
 
 
 class TerminalSessionCreateRequest(BaseModel):

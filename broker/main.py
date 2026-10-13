@@ -57,6 +57,7 @@ from .auth import (
     require_platform_admin,
 )
 from .plugins import get_all_plugins, get_plugin, load_plugins
+from . import approval_gate
 from .config import settings
 from .db import init_db
 from .models import (
@@ -69,6 +70,7 @@ from .models import (
     AdminUpdatePlanRequest,
     AdminUpdateTenantRequest,
     AgentReportWitnessedRequest,
+    ApprovalCreateRequest,
     ApprovalDecisionRequest,
     ApprovalRecord,
     AuthWhoAmIResponse,
@@ -91,10 +93,8 @@ from .repository import (
     ensure_api_token_record,
     get_chat_history,
     get_session_or_none,
-    list_approvals,
     list_audit_events,
     list_projects_records,
-    update_approval_status,
     write_audit_event,
 )
 from .scheduler import (
@@ -253,6 +253,8 @@ async def startup() -> None:
         token_hash=settings.bridge_api_token,
     )
     start_scheduler()
+    # Approval gate timer: re-notify waiting requests, DENY them at their deadline.
+    approval_gate.start_sweeper()
     # Connected-tier intelligence metabolism — no-op unless a feed is configured.
     from .intelligence.feed import start_feed_refresher
     start_feed_refresher()
@@ -876,9 +878,33 @@ async def get_audit_events(
 @app.get("/v1/approvals", response_model=list[ApprovalRecord])
 async def get_approvals(
     limit: int = 50,
+    status: Optional[str] = None,
     actor: AuthContext = Depends(require_bearer_token),
 ) -> list[ApprovalRecord]:
-    return list_approvals(limit=min(limit, 200))
+    return [ApprovalRecord(**r) for r in approval_gate.list_requests(status=status, limit=limit)]
+
+
+@app.post("/v1/approvals", response_model=ApprovalRecord, status_code=201)
+async def create_approval_request(
+    body: ApprovalCreateRequest,
+    actor: AuthContext = Depends(require_not_demo),
+) -> ApprovalRecord:
+    """Ask a human before a gated action. Stored PENDING, announced on the configured channels,
+    re-announced while waiting, and DENIED automatically at its deadline."""
+    rec = await approval_gate.request_approval(
+        actor_id=actor.user_id, tool_name=body.tool_name, summary=body.summary,
+        payload=body.payload, session_id=body.session_id, timeout_s=body.timeout_s)
+    return ApprovalRecord(**rec)
+
+
+def _decide_or_http(approval_id: str, status: str, notes: str, actor: AuthContext) -> ApprovalRecord:
+    try:
+        return ApprovalRecord(**approval_gate.decide(
+            approval_id, status=status, decided_by=actor.user_id, notes=notes))
+    except approval_gate.ApprovalNotFound:
+        raise HTTPException(status_code=404, detail="Approval not found")
+    except approval_gate.ApprovalNotPending as exc:
+        raise HTTPException(status_code=409, detail=f"Approval is already {exc.status}; it cannot be changed")
 
 
 @app.post("/v1/approvals/{approval_id}/approve", response_model=ApprovalRecord)
@@ -889,15 +915,9 @@ async def approve_request(
 ) -> ApprovalRecord:
     # Record-only: the broker authorizes, records, and audits the decision;
     # it does NOT execute. Executing an approved action is the integrating
-    # system's responsibility. update_approval_status persists the decision
-    # (status + notes) and writes the "approval.approved" audit event.
-    record = update_approval_status(
-        approval_id,
-        status="approved",
-        decision_notes=body.decision_notes,
-    )
-    if record is None:
-        raise HTTPException(status_code=404, detail="Approval not found")
+    # system's responsibility. Only a PENDING request can be decided (409 otherwise),
+    # and the audit row names the person who decided.
+    record = _decide_or_http(approval_id, "approved", body.decision_notes, actor)
     if record.surge_task_id:
         await submit_approval_decision(record.surge_task_id)
     return record
@@ -909,14 +929,7 @@ async def deny_request(
     body: ApprovalDecisionRequest,
     actor: AuthContext = Depends(require_bearer_token),
 ) -> ApprovalRecord:
-    record = update_approval_status(
-        approval_id,
-        status="denied",
-        decision_notes=body.decision_notes,
-    )
-    if record is None:
-        raise HTTPException(status_code=404, detail="Approval not found")
-    return record
+    return _decide_or_http(approval_id, "denied", body.decision_notes, actor)
 
 
 # ---------------------------------------------------------------------------

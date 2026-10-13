@@ -125,9 +125,9 @@ async def send_alert(
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
-    full_title = f"[Maestro {severity.upper()}] {title}"
+    full_title = f"[Vertirite {severity.upper()}] {title}"
     if node:
-        full_title = f"[Maestro {severity.upper()}] [{node}] {title}"
+        full_title = f"[Vertirite {severity.upper()}] [{node}] {title}"
 
     full_message = f"{message}\n\nNode: {node or 'N/A'}\nTime: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}"
 

@@ -42,8 +42,6 @@ log = logging.getLogger("maestro.support")
 
 # ^ Same-host loopback default per docs/NETWORKING.md. Container deploys
 BRAIN_AUTH = os.environ.get("SURGE_OPERATOR_BRAIN_AUTH_TOKEN", "")
-NTFY_URL = os.environ.get("SURGE_NTFY_URL", "http://localhost:8088").rstrip("/")
-NTFY_TOPIC_OPS = os.environ.get("SURGE_ACTIONS_TOPIC", "surgexi-actions-todd")
 TRIAGE_TIER = os.environ.get("SURGE_SUPPORT_TIER", "surge-operator")
 TRIAGE_TIMEOUT_S = int(os.environ.get("SURGE_SUPPORT_TIMEOUT_S", "60"))
 

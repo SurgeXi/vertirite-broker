@@ -15,7 +15,9 @@ service providing:
 - **discovery**: coverage map, exposure report, witnessed-finding intake, network sensors
 - **compliance** report packs and framework controls
 - **licensing** / entitlements (governance is always free; premium modules are gated)
-- an **approval queue** (local, fail-open) with a signed **audit** trail
+- an **approval gate**: request → notify → re-notify → approve / deny, and an unanswered
+  request is **denied** at its deadline; every step is written to the **audit** trail, and the
+  compliance export is Ed25519-sealed when a node signing key is configured
 - **local mode authority** (`/v1/mode`) with an optional tighten-only upstream client
 
 > This broker is extracted from the SurgeXi monorepo with all fleet-operations
@@ -53,7 +55,7 @@ broker never calls a destination the operator did not configure.
 | Your own `surge-core` governor (optional upstream) | mode read-through / approval forward, if enabled | loopback (`127.0.0.1`); forwarding **off** | `SURGE_OPERATOR_SURGE_CORE_URL`, `…_FORWARD_APPROVALS_TO_SURGE_CORE` | governance state (mode, approval decision) |
 | Your own cloud provider, via `/v1/proxy/openai` | when *your* agent calls the governed passthrough | disabled unless enabled | `SURGE_OPERATOR_PROXY_*` (your BYO key) | your agent's own request, forwarded |
 | A provider's model-list endpoint, via `/v1/keys/{provider}/test` | operator validates a BYO key | on-demand only | operator action (your key) | nothing — a non-generating auth check |
-| Your own alert channel (e.g. Pushover) | on an alert, if enabled | **off** | `SURGE_OPERATOR_ALERT_*` | alert text |
+| Your own alert channels: SMTP email, a webhook you own, Pushover | on an alert or an approval request / reminder / timeout, if enabled | **off** | `SURGE_OPERATOR_ALERT_*` | alert or approval text (summary, action name, approval id, deadline) |
 | A coverage **beacon** / intelligence feed | periodic, if a URL is set | **empty = disabled** | `SURGE_OPERATOR_PROTECTION_BEACON_URL`, `…_INTELLIGENCE_FEED_URL` | coverage counts (you choose the destination) |
 
 There is no telemetry, license-server call, or hardcoded remote in the tree — the
@@ -78,7 +80,8 @@ SURGE_OPERATOR_BROKER_API_TOKEN="change-me-broker-token" \
 - `POST /v1/discovery/ingest/egress|dns|flow`, `POST /v1/agent/witnessed`
 - `POST /v1/containment/classify`, `GET /v1/integrity/*`
 - `GET  /v1/compliance/pack|report|controls`
-- `GET  /v1/approvals`, `POST /v1/approvals/{id}/approve|deny`
+- `POST /v1/approvals` (ask a human), `GET /v1/approvals?status=pending`,
+  `POST /v1/approvals/{id}/approve|deny` (only a pending request; otherwise 409)
 - `GET  /v1/audit/me`, `GET /v1/audit-events`
 
 All `/v1/*` endpoints require `Authorization: Bearer <token>`.
@@ -105,14 +108,27 @@ env SURGE_OPERATOR_DATABASE_URL="sqlite+pysqlite:////absolute/path/to/broker.db"
   .venv/bin/alembic upgrade head
 ```
 
+## Approval gate
+
+`POST /v1/approvals` (`tool_name`, `summary`, optional `payload`, `timeout_s`) stores a
+**pending** request and announces it on every alert channel the operator enabled. While it
+waits it is re-announced every `SURGE_OPERATOR_APPROVAL_RENOTIFY_S` (default 900 s), at most
+`…_APPROVAL_MAX_REMINDERS` times (default 3). At its deadline (`timeout_s`, default
+`…_APPROVAL_TIMEOUT_S` = 3600 s, capped at `…_APPROVAL_TIMEOUT_MAX_S`) it is **denied**
+automatically. That default is not configurable: an unanswered request is never approved.
+Only a pending request can be decided, so a late answer cannot overturn a timeout or an
+earlier decision (HTTP 409). Each step is audited: `approval.requested`, `approval.notified`
+(with the channels that took it), `approval.approved` / `approval.denied` (with who decided),
+and `approval.timeout_denied`. Set `…_APPROVAL_CONSOLE_URL` to your own console's address so
+the notification says where to decide.
+
 ## Known limitations
 
 Called out plainly so a reader isn't surprised:
 
-- **The approval queue has no built-in intake route in this cut.** `GET /v1/approvals`
-  and `POST /v1/approvals/{id}/approve|deny` are the record-only decision surface,
-  but this extracted broker does not itself create approvals — the integrating
-  system is expected to populate the queue. A first-party intake path is planned.
+- **Approvals are notified on the channels you configure on this broker:** the console,
+  SMTP email, a webhook you own, and Pushover. There is no mobile push app yet. A
+  phone-push companion is planned and is **not** a channel today.
 - **The bundled console's "capabilities" tab is inert here.** It targeted the
   surge agent-tasking surface, which is not part of this governance-only broker;
   the tab degrades gracefully to "unavailable." The live governance flow is
