@@ -206,6 +206,8 @@ _PLACEHOLDER_ADMIN_TOKENS = frozenset({
     "", "change-me-in-production", "surge-operator-dev-token",
     "change-me-token", "change-me-broker-token",
 })
+# Service-plane tokens that were ever published as defaults. Never valid in production.
+_PUBLISHED_BRIDGE_TOKENS = frozenset({"surge-openwebui-bridge-token", "change-me-bridge-token"})
 
 
 def _assert_admin_token_configured() -> None:
@@ -221,6 +223,11 @@ def _assert_admin_token_configured() -> None:
             "placeholder. It is the platform_admin credential — set it to a unique "
             "secret per deployment. In production the broker fails closed rather than "
             "serve a value that is public knowledge."
+        )
+    if settings.environment == "production" and settings.bridge_api_token in _PUBLISHED_BRIDGE_TOKENS:
+        raise RuntimeError(
+            "Refusing to start: SURGE_OPERATOR_BRIDGE_API_TOKEN is a value published in the "
+            "public repository. Set a unique secret, or leave it empty to disable the bridge role."
         )
 
 
@@ -247,11 +254,12 @@ async def startup() -> None:
         token_label="broker-admin",
         token_hash=settings.broker_api_token,
     )
-    ensure_api_token_record(
-        user_id="openwebui-bridge",
-        token_label="bridge-service",
-        token_hash=settings.bridge_api_token,
-    )
+    if settings.bridge_api_token:
+        ensure_api_token_record(
+            user_id="openwebui-bridge",
+            token_label="bridge-service",
+            token_hash=settings.bridge_api_token,
+        )
     start_scheduler()
     # Connected-tier intelligence metabolism — no-op unless a feed is configured.
     from .intelligence.feed import start_feed_refresher

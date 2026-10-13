@@ -30,7 +30,10 @@ class Settings(BaseSettings):
     # /v1/proxy/openai.
     allow_sqlite_dev: bool = True
     broker_api_token: str = "surge-operator-dev-token"
-    bridge_api_token: str = "surge-openwebui-bridge-token"
+    # Service-plane (bridge) credential. EMPTY = no bridge role exists. The old non-empty
+    # default was published in this repository, so any install that kept it accepted a
+    # public token as role "service"; production now refuses to start with it.
+    bridge_api_token: str = ""
     # Public-demo token (try.vertirite.com console). SEPARATE from
     # broker_api_token so the key printed in the demo URL fragment maps to a
     # locked-down role="demo" (product surface only) instead of platform_admin.
