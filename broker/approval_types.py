@@ -11,7 +11,7 @@ import enum
 class ApprovalClass(str, enum.Enum):
     SAFE = "safe"                  # read-only, auto-approved
     SCOPED = "scoped"              # writes within a tenant; auto-approved if scope checks pass
-    GATED = "gated"                # operator approval required (ntfy + dashboard)
+    GATED = "gated"                # operator approval required (console + alert channels)
     HIGH_STAKES = "high_stakes"    # operator approval AND disagreement-AI review
 
 

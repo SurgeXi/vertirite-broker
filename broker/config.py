@@ -166,6 +166,10 @@ class Settings(BaseSettings):
     alert_email_smtp_port: int = 587
     alert_email_smtp_user: str = ""
     alert_email_smtp_pass: str = ""
+    # STARTTLS to the operator's relay (default on). Off only for an on-prem relay with no TLS.
+    alert_email_starttls: bool = True
+    # PEM bundle for a relay whose certificate is issued by an internal CA ("" = system CAs).
+    alert_email_ca_file: str = ""
     alert_webhook_enabled: bool = False
     alert_webhook_url: str = ""
     # Closed-loop enforcement VERIFY: run a real prober (DNS resolution) to confirm
@@ -176,6 +180,17 @@ class Settings(BaseSettings):
     # on every newly-seen sanctioned AI service.
     alert_categories: tuple = ("suspicious-egress",)
     alert_pushover_enabled: bool = False
+    # Approval gate (broker/approval_gate.py). An unanswered request is re-announced every
+    # approval_renotify_s (at most approval_max_reminders times) and DENIED at its deadline.
+    # The timeout decision is not a setting: it is always deny.
+    approval_timeout_s: int = 3600
+    approval_timeout_max_s: int = 86400
+    approval_renotify_s: int = 900
+    approval_max_reminders: int = 3
+    approval_sweep_s: int = 30
+    # The operator's OWN console URL, quoted in notifications so a recipient knows where to decide.
+    # Empty = say "the Vertirite console" with no link. Never a SurgeXi address.
+    approval_console_url: str = ""
 
 
     model_config = SettingsConfigDict(env_prefix="SURGE_OPERATOR_", extra="ignore")

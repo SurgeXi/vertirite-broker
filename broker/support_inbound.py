@@ -13,17 +13,17 @@ gives users alternate paths that DON'T require Brain to be up:
 All three converge on `inbound_create_ticket()` which:
   - Persists the ticket immediately (no Brain dependency)
   - Maps inbound identity (email / phone) to a user_id when possible
-  - Always pings the operator's ntfy topic — these channels exist
-    BECAUSE the AI/in-app path failed, so operator notification is
-    not optional
-  - Then BEST-EFFORT tries the surge triage; if Brain is down, the
-    ticket sits in `open` until operator looks at it
+  - Always notifies the operator on the alert channels configured on THIS broker
+    (email / webhook / Pushover; see notifications.py) — these channels exist
+    BECAUSE the in-app path failed, so operator notification is not optional.
+    Nothing here calls a vendor or SurgeXi service.
+  - The ticket then sits in `open` until the operator looks at it
 
 Security posture:
   - These endpoints accept unauthenticated POSTs, so they're rate-limited
     by IP (10 / 5min per IP) and content size (subject ≤300, body ≤8000)
   - Spam guard: simple heuristic + sender-domain reputation could land
-    later; for now, the operator ntfy push is the canary
+    later; for now, the operator notification is the canary
 """
 from __future__ import annotations
 
@@ -35,15 +35,11 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-import httpx
-
 from .db import session_scope
 from .support import SupportTicketTable, _row_to_dict_from_table
 
-log = logging.getLogger("maestro.support_inbound")
+log = logging.getLogger("vertirite.support_inbound")
 
-NTFY_URL = os.environ.get("SURGE_NTFY_URL", "http://localhost:8088").rstrip("/")
-NTFY_TOPIC_OPS = os.environ.get("SURGE_ACTIONS_TOPIC", "surgexi-actions-todd")
 RATE_LIMIT_PER_IP_5MIN = int(os.environ.get("SURGE_INBOUND_RATE_LIMIT_5MIN", "10"))
 
 
@@ -145,36 +141,19 @@ async def inbound_create_ticket(
     log.info("inbound ticket created id=%s channel=%s sender=%s",
              ticket_id, channel, sender_identity[:40])
 
-    # ALWAYS ntfy operator — these channels exist precisely because the
-    # in-app path may be broken, so operator awareness is non-optional
+    # ALWAYS notify the operator, on the channels configured on this broker. These
+    # channels exist precisely because the in-app path may be broken.
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
-            await client.post(
-                f"{NTFY_URL}/{NTFY_TOPIC_OPS}",
-                data=(f"📨 INBOUND {channel.upper()} ticket\n"
-                      f"From: {sender_identity}\n"
-                      f"Product: {product}\n"
-                      f"Subject: {subject[:120]}\n"
-                      f"Body: {body[:300]}").encode(),
-                headers={
-                    # HTTP headers are latin-1 only; keep title plain ASCII.
-                    # Emoji + non-ASCII flair stays in the body.
-                    "Title": f"Inbound ticket - {channel}",
-                    "Priority": "urgent" if priority in ("high", "critical") else "high",
-                    "Tags": f"ticket,inbound,{channel}",
-                },
-            )
-    except Exception as e:
-        log.warning("operator ntfy push failed for inbound id=%s: %s", ticket_id, e)
-
-    # Best-effort triage — if Brain is down, this just leaves status=open
-    # which is exactly the right behavior (operator owns it)
-    try:
-        from .support import _run_triage
-        import asyncio as _asyncio
-        _asyncio.create_task(_run_triage(ticket_id))
-    except Exception as e:
-        log.warning("background triage kick-off failed for inbound id=%s: %s", ticket_id, e)
+        from .notifications import send_alert
+        await send_alert(
+            severity="critical" if priority in ("high", "critical") else "warning",
+            title=f"Inbound support ticket via {channel}",
+            message=(f"From: {sender_identity}\nProduct: {product}\n"
+                     f"Subject: {subject[:120]}\n\n{body[:300]}\n\nTicket: {ticket_id}"),
+            node="support",
+        )
+    except Exception as e:  # noqa: BLE001 — the ticket is already stored
+        log.warning("operator notification failed for inbound id=%s: %s", ticket_id, type(e).__name__)
 
     with session_scope() as db:
         row = db.get(SupportTicketTable, ticket_id)

@@ -1,6 +1,6 @@
 # Copyright © 2026 SurgeXi Business Intelligence, a Teamsmith Enterprises LLC company. Licensed under the Business Source License 1.1 — see LICENSE.
 """
-Maestro AI — Remote Alert Notification System
+Vertirite — operator alert channels (email, webhook, Pushover)
 
 Delivers critical alerts through multiple channels:
 1. Email (SMTP) — send to configured recipients
@@ -13,6 +13,8 @@ channels are enabled and delivers through each active one.
 
 from __future__ import annotations
 
+import asyncio
+import html
 import logging
 import smtplib
 import ssl
@@ -25,7 +27,7 @@ import httpx
 
 from .config import settings
 
-logger = logging.getLogger("maestro.notifications")
+logger = logging.getLogger("vertirite.notifications")
 
 # ── Delivery log (in-memory, last 100) ───────────────────────────────
 
@@ -125,9 +127,9 @@ async def send_alert(
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
-    full_title = f"[Maestro {severity.upper()}] {title}"
+    full_title = f"[Vertirite {severity.upper()}] {title}"
     if node:
-        full_title = f"[Maestro {severity.upper()}] [{node}] {title}"
+        full_title = f"[Vertirite {severity.upper()}] [{node}] {title}"
 
     full_message = f"{message}\n\nNode: {node or 'N/A'}\nTime: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}"
 
@@ -208,8 +210,10 @@ async def send_alert(
 async def send_email_alert(to: str, subject: str, body: str) -> None:
     """Send an alert via SMTP.
 
-    Uses STARTTLS on the configured SMTP host/port.
-    Runs synchronously (SMTP is blocking) but is fast enough for alerts.
+    Uses the operator's own relay. STARTTLS by default (verified against the system CAs,
+    or ``alert_email_ca_file`` for an internal CA); ``alert_email_starttls=false`` for an
+    on-prem relay that does not offer TLS. The blocking SMTP exchange runs in a worker
+    thread so it never stalls the broker's event loop.
     """
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
@@ -225,13 +229,13 @@ async def send_email_alert(to: str, subject: str, body: str) -> None:
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px;">
         <div style="max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
             <div style="background: #1a1a2e; color: #fff; padding: 16px 20px;">
-                <h2 style="margin: 0; font-size: 18px;">{subject}</h2>
+                <h2 style="margin: 0; font-size: 18px;">{html.escape(subject)}</h2>
             </div>
             <div style="padding: 20px; background: #fff; color: #333;">
-                <pre style="white-space: pre-wrap; font-family: 'SF Mono', Menlo, monospace; font-size: 13px; line-height: 1.5;">{body}</pre>
+                <pre style="white-space: pre-wrap; font-family: 'SF Mono', Menlo, monospace; font-size: 13px; line-height: 1.5;">{html.escape(body)}</pre>
             </div>
             <div style="padding: 12px 20px; background: #f5f5f5; color: #888; font-size: 12px;">
-                Sent by Maestro AI — Maestro
+                Sent by Vertirite
             </div>
         </div>
     </body>
@@ -239,15 +243,19 @@ async def send_email_alert(to: str, subject: str, body: str) -> None:
     """
     msg.attach(MIMEText(html_body, "html"))
 
-    context = ssl.create_default_context()
+    def _send() -> None:
+        with smtplib.SMTP(settings.alert_email_smtp_host, settings.alert_email_smtp_port,
+                          timeout=30) as server:
+            server.ehlo()
+            if settings.alert_email_starttls:
+                context = ssl.create_default_context(cafile=settings.alert_email_ca_file or None)
+                server.starttls(context=context)
+                server.ehlo()
+            if settings.alert_email_smtp_user and settings.alert_email_smtp_pass:
+                server.login(settings.alert_email_smtp_user, settings.alert_email_smtp_pass)
+            server.sendmail(msg["From"], [to], msg.as_string())
 
-    with smtplib.SMTP(settings.alert_email_smtp_host, settings.alert_email_smtp_port) as server:
-        server.ehlo()
-        server.starttls(context=context)
-        server.ehlo()
-        if settings.alert_email_smtp_user and settings.alert_email_smtp_pass:
-            server.login(settings.alert_email_smtp_user, settings.alert_email_smtp_pass)
-        server.sendmail(msg["From"], [to], msg.as_string())
+    await asyncio.to_thread(_send)
 
     logger.info("Email alert sent to %s: %s", to, subject)
 
@@ -272,7 +280,7 @@ async def send_webhook_alert(url: str, payload: dict) -> None:
                     "color": color_map.get(severity, "#0099ff"),
                     "title": payload["title"],
                     "text": payload["message"],
-                    "footer": f"Maestro AI | {payload.get('node', 'N/A')}",
+                    "footer": f"Vertirite | {payload.get('node', 'N/A')}",
                     "ts": payload.get("timestamp", ""),
                 }
             ],
@@ -334,7 +342,7 @@ async def send_test_alert() -> dict:
     return await send_alert(
         severity="info",
         title="Test Alert",
-        message="This is a test alert from Maestro AI. If you received this, your alert channel is working correctly.",
+        message="This is a test alert from Vertirite. If you received this, your alert channel is working correctly.",
         node="vertirite-broker",
     )
 
