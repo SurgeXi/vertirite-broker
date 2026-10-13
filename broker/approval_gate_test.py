@@ -115,7 +115,7 @@ def test_reminders_then_timeout_denies_and_cannot_be_overturned(clock):
     assert rec["status"] == G.DENIED and rec["decided_by"] == G.TIMEOUT_ACTOR
     titles = [m["title"] for m in clock["sent"]]
     assert titles[0].startswith("Approval needed") and titles[-1].startswith("Approval DENIED by timeout")
-    assert sum(t.startswith("Reminder") for t in titles) == 2
+    assert [t.split(":")[0] for t in titles if t.startswith("Reminder")] == ["Reminder 1", "Reminder 2"]
     assert "approval.timeout_denied" in _audit(rid)
     with pytest.raises(G.ApprovalNotPending):              # a late "approve" cannot revive it
         G.decide(rid, status=G.APPROVED, decided_by="operator-1")

@@ -98,7 +98,8 @@ def _message(rec: dict[str, Any], kind: str) -> tuple[str, str, str]:
         lead = ("Nobody answered this approval request before its deadline, so it was denied "
                 "automatically (the safe default). The action must not run.")
     elif kind == "reminder":
-        sev, title = "critical", f"Reminder {rec['notify_count']}: approval still waiting: {tool}"
+        # notify_count includes the first announcement, so reminder n is announcement n+1
+        sev, title = "critical", f"Reminder {max(1, rec['notify_count'] - 1)}: approval still waiting: {tool}"
         lead = "This approval request is still waiting for a decision."
     else:
         sev, title = "critical", f"Approval needed: {tool}"

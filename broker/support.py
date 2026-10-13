@@ -7,7 +7,7 @@ Flow:
   4. surge attempts triage / safe auto-fix (gated through Phase D for any
      MUTATE+ tool); returns a triage_summary + status update
   5. broker writes the result back to the ticket; if the ticket needs
-     operator attention, ntfy-push to Todd's phone
+     operator attention, notified on the broker's own alert channels
   6. resolution / reply notifications go back to the user via the
      unprompted-speech channel (Slice 2, peer_stream.post_unprompted)
 
@@ -38,10 +38,9 @@ from sqlalchemy.orm import declarative_base
 
 from .db import session_scope, Base
 
-log = logging.getLogger("maestro.support")
+log = logging.getLogger("vertirite.support")
 
 # ^ Same-host loopback default per docs/NETWORKING.md. Container deploys
-BRAIN_AUTH = os.environ.get("SURGE_OPERATOR_BRAIN_AUTH_TOKEN", "")
 TRIAGE_TIER = os.environ.get("SURGE_SUPPORT_TIER", "surge-operator")
 TRIAGE_TIMEOUT_S = int(os.environ.get("SURGE_SUPPORT_TIMEOUT_S", "60"))
 
@@ -130,8 +129,8 @@ async def list_tickets(
 
 
 async def operator_reply(ticket_id: str, reply: str, new_status: str = "resolved") -> Optional[dict]:
-    """Operator (Todd or platform_admin) replies to a ticket. Updates row +
-    pushes the reply to the user via unprompted-speech channel + ntfy ack."""
+    """Operator (platform_admin) replies to a ticket. Updates row +
+    pushes the reply to the user via the unprompted-speech channel."""
     now = datetime.now(timezone.utc)
     with session_scope() as db:
         row = db.get(SupportTicketTable, ticket_id)
