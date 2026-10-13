@@ -154,6 +154,9 @@ async def send_alert(
                 "severity": severity,
                 "title": full_title,
                 "message": full_message,
+                # Same text under the field name many alert receivers read (e.g. a
+                # WhatsApp/SMS bridge that takes {source, severity, title, body}).
+                "body": full_message,
                 "node": node,
                 "timestamp": results["timestamp"],
                 "source": "vertirite-broker",
