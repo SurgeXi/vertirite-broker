@@ -40,7 +40,7 @@ def require_bearer_token(authorization: str = Header(default="")) -> AuthContext
             created_at=utc_now(),
             role="platform_admin",
         )
-    if token == settings.bridge_api_token:
+    if settings.bridge_api_token and token == settings.bridge_api_token:
         logger.info("Auth success: user=openwebui-bridge label=bridge-service")
         return AuthContext(
             user_id="openwebui-bridge",

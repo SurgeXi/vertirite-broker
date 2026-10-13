@@ -47,7 +47,8 @@ Base.metadata.create_all(engine)
 GOV_TOKEN = "governor-token-fixture"
 BROKER_TOKEN = settings.broker_api_token
 DEMO_TOKEN = "demo-token-fixture"
-BRIDGE_TOKEN = settings.bridge_api_token  # the agent/service plane
+BRIDGE_TOKEN = "bridge-token-fixture"  # the agent/service plane (no default since #8)
+settings.bridge_api_token = BRIDGE_TOKEN
 
 
 def _auth(token: str) -> str:
