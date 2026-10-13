@@ -1,4 +1,5 @@
 # Copyright © 2026 SurgeXi Business Intelligence, a Teamsmith Enterprises LLC company.
+# Licensed under the Apache License, Version 2.0 (see sdk/LICENSE).
 """Minimal client for the Vertirite governance API (approval gate + audit read + mode).
 
 Matches docs/openapi-governance.json. Only dependency: httpx (pip install httpx).
