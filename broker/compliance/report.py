@@ -131,7 +131,7 @@ def build_report(tenant_id: str, since: Optional[datetime] = None,
             f"Over the reported period, Vertirite deterministically governed this tenant's "
             f"AI/automation actions on-node: {breaks_total} behavioral break(s) detected, "
             f"{containment_actions} containment action(s) applied, "
-            f"{governance_actions} governance event(s) recorded in the append-only audit trail. "
+            f"{governance_actions} governance event(s) recorded in the audit trail. "
             f"Chokepoints exercised: {', '.join(sorted(chokepoints_seen)) or 'none in period'}."
         ),
         "disclaimer": frameworks.catalog()["disclaimer"],

@@ -456,7 +456,7 @@ def render_inventory_pdf(
     summary_text = (
         f"During this period, the tenant scope declared <b>{coverage['governed'] + coverage['declared_not_governed']}</b> "
         f"hosts as in-scope for AI governance. Of those, <b>{coverage['governed']}</b> are under continuous Vertirite "
-        f"governance (signed audit trail attached) — a coverage of <b>{coverage['coverage_pct']:.1f}%</b>. "
+        f"governance (audit trail attached) — a coverage of <b>{coverage['coverage_pct']:.1f}%</b>. "
         f"<b>{coverage['declared_not_governed']}</b> hosts are declared but pending the fleet agent install. "
         f"Vertirite&rsquo;s discovery probe additionally witnessed AI activity on hosts not previously declared: "
         f"<b>{payload['witnessed']['total']}</b> findings total, of which "
@@ -513,7 +513,7 @@ def render_inventory_pdf(
         Paragraph(
             f"During the period, the broker recorded <b>{payload['audit_summary']['event_count']}</b> audited "
             f"events. The top actions and operators by volume are listed below; the full event chain is "
-            f"available via <i>GET /v1/admin/audit</i> and is cryptographically attributable to the originating "
+            f"available via <i>GET /v1/admin/audit</i> and records the authenticated originating "
             f"operator.",
             styles["Normal"],
         )

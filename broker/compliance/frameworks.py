@@ -70,7 +70,7 @@ CONTROLS: List[Dict[str, Any]] = [
     },
     {
         "id": "audit.trail",
-        "what": "Append-only, cryptographically attributable record of every action.",
+        "what": "Audit record of every governed action and approval decision: authenticated actor, action, time (hash-chained, signed records in progress).",
         "frameworks": {
             "OWASP_LLM": ["LLM09 Overreliance — monitoring"],
             "MITRE_ATLAS": ["Logging & detection coverage"],

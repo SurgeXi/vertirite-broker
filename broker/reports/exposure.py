@@ -276,7 +276,7 @@ def render_exposure_pdf(payload: Dict[str, Any], fingerprint_hex: str) -> bytes:
     flow.append(Paragraph(
         "This is what Vertirite <b>sees</b>. Producing it changed nothing on your systems — discovery is "
         "read-only. <b>Governing</b> this exposure — putting a human gate in front of the actions that can hurt "
-        "you, containing an agent that drifts, and recording every decision in a signed, append-only audit — is "
+        "you, containing an agent that drifts, and recording every decision in an audit log — is "
         "done by the Vertirite broker, which is free and open-source. A Vertirite pilot adds the program that "
         "turns that into an audit an assessor accepts: capability-registry design, interpretation of this map, "
         "an artifact mapped to your framework (HIPAA, SOX, or IEC 62443), the licensed modules, and federation "
