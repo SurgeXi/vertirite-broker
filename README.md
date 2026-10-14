@@ -7,9 +7,9 @@
 Vertirite runs on your own node. Your data never leaves it. The control plane contains no model
 and calls none: it authorizes and records; it does not execute.
 
-This repository is the **public showcase** for Vertirite: what it does, how it is built, the
-governance API, a client, and a sample of the evidence an auditor receives. The product source
-is distributed to approved pilot customers.
+This public repository shows Vertirite's architecture, documentation and SDK, with a sample of
+the evidence an auditor receives. Pilot customers' security teams review the full source under
+NDA.
 
 ## What it does
 
